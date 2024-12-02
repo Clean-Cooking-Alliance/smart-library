@@ -44,7 +44,9 @@ cd clean-cooking-library
 
 Create a `.env` file in the root directory:
 ```env
+DATABASE_URL=postgresql://user:password@db:5432/cleandb
 OPENAI_API_KEY=your_openai_api_key
+PERPLEXITY_API_KEY=your_perplexity_api_key
 ```
 
 3. Build and start the application
