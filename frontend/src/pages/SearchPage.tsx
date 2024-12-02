@@ -1,119 +1,130 @@
-// src/pages/SearchPage.tsx
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { SearchBar } from '../components/search/SearchBar';
 import axios from 'axios';
+import { SearchBar } from '../components/search/SearchBar';
 
-interface SearchResult {
-  document_id: number;
+interface Tag {
+  id?: number;
+  name: string;
+  category: string;
+}
+
+interface BaseSearchResult {
   title: string;
   summary: string;
   source_url: string;
   relevance_score: number;
-  tags: Array<{
-    id: number;
-    name: string;
-    category: string;
-  }>;
+  source: 'internal' | 'external';
+}
+
+interface InternalSearchResult extends BaseSearchResult {
+  document_id: number;
+  tags: Tag[];
+}
+
+interface ExternalSearchResult extends BaseSearchResult {}
+
+interface CombinedSearchResponse {
+  internal_results: InternalSearchResult[];
+  external_results: ExternalSearchResult[];
 }
 
 export const SearchPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = React.useState<string>('');
+  const [searchQuery, setSearchQuery] = React.useState('');
 
-  const { data: results, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
     queryFn: async () => {
-      if (!searchQuery) return [];
-      
-      try {
-        const response = await axios.post('http://localhost:8000/api/v1/search/', 
-          {
-            query: searchQuery,
-            limit: 10
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            }
-          }
-        );
-        
-        console.log('Search response:', response.data);  // Debug log
-        return response.data as SearchResult[];
-      } catch (error) {
-        console.error('Search error:', error);  // Debug log
-        throw error;
-      }
+      if (!searchQuery) return null;
+      const response = await axios.post<CombinedSearchResponse>(
+        'http://localhost:8000/api/v1/search/',
+        {
+          query: searchQuery,
+          limit: 10,
+          include_external: true
+        }
+      );
+      return response.data;
     },
-    enabled: !!searchQuery,
-    retry: 1,
-    staleTime: 30000, // Consider results fresh for 30 seconds
+    enabled: !!searchQuery
   });
 
   const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
     setSearchQuery(query);
   };
 
-  React.useEffect(() => {
-    if (error) {
-      console.error('Search error:', error);
-    }
-  }, [error]);
+  const renderSearchResults = (results: BaseSearchResult[], title: string) => {
+    if (!results.length) return null;
+
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4">{title}</h2>
+        <div className="space-y-4">
+          {results.map((result, index) => (
+            <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+              <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
+              <p className="text-gray-600 mb-3">{result.summary}</p>
+              {/* Add tags if result is internal */}
+              {'tags' in result && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {(result as InternalSearchResult).tags.map((tag, tagIndex) => (
+                    <span
+                      key={tagIndex}
+                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <a
+                  href={result.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  View Source →
+                </a>
+                <span className="text-sm text-gray-500">
+                  Relevance: {(result.relevance_score * 100).toFixed(0)}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="container mx-auto py-6 px-4">
+      <h1 className="text-2xl font-bold mb-6">Clean Cooking Research Search</h1>
+      
       <SearchBar onSearch={handleSearch} isLoading={isLoading} />
       
-      {/* Error state */}
       {error && (
-        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded">
+        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
           Error: {error instanceof Error ? error.message : 'An error occurred'}
         </div>
       )}
 
-      {/* Loading state */}
       {isLoading && (
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center text-gray-600">
           Searching...
         </div>
       )}
 
-      {/* Results */}
-      {results && results.length > 0 && (
-        <div className="mt-4 space-y-4">
-          {results.map((result) => (
-            <div key={result.document_id} className="p-4 border rounded bg-white">
-              <h3 className="text-lg font-semibold">{result.title}</h3>
-              <p className="mt-2 text-gray-600">{result.summary}</p>
-              <div className="mt-2 flex gap-2">
-                {result.tags.map((tag) => (
-                  <span 
-                    key={tag.id} 
-                    className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                  >
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-              <a 
-                href={result.source_url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="mt-2 inline-block text-blue-600 hover:underline"
-              >
-                View Source
-              </a>
+      {data && (
+        <div className="mt-8">
+          {renderSearchResults(data.internal_results, 'Internal Library Results')}
+          {renderSearchResults(data.external_results, 'External Research Results')}
+          
+          {!data.internal_results.length && !data.external_results.length && (
+            <div className="text-center text-gray-600">
+              No results found for "{searchQuery}"
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* No results state */}
-      {results && results.length === 0 && searchQuery && !isLoading && (
-        <div className="mt-4 text-center text-gray-600">
-          No results found for "{searchQuery}"
+          )}
         </div>
       )}
     </div>

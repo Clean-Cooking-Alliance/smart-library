@@ -1,10 +1,10 @@
 # backend/app/models/tag.py
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-import enum
+from enum import Enum as PyEnum  # Rename to avoid conflict
 
-class TagCategory(str, enum.Enum):
+class TagCategory(str, PyEnum):
     REGION = "region"
     TOPIC = "topic"
     TECHNOLOGY = "technology"
