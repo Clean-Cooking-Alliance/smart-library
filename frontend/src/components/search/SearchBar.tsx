@@ -1,7 +1,7 @@
 // src/components/search/SearchBar.tsx
 import React, { useState } from 'react';
 import { Input } from '../ui/input';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button'
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
