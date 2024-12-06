@@ -2,7 +2,7 @@
 
 Revision ID: initial_migration
 Revises: 
-Create Date: 2023-11-18 00:00:00.000000
+Create Date: 2024-11-18 00:00:00.000000
 
 """
 from alembic import op

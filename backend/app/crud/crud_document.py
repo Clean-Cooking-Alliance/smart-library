@@ -39,14 +39,15 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         # Handle tags
         if obj_in.tags:
             tags = []
-            for tag_name in obj_in.tags:
+            for tag_in in obj_in.tags:
                 # Get existing tag or create new one
-                tag = db.query(Tag).filter(Tag.name == tag_name).first()
-                if not tag:
-                    # Guess category for new tag
-                    category = self._guess_tag_category(tag_name)
-                    tag = Tag(name=tag_name, category=category)
-                    db.add(tag)
+                if not tag_in.name and not tag_in.category:
+                    tag = db.query(Tag).filter(Tag.name == tag_in.name).first()
+                    if not tag:
+                        # Guess category for new tag
+                        category = self._guess_tag_category(tag_in.name)
+                        tag = Tag(name=tag_in.name, category=category)
+                        db.add(tag)
                 tags.append(tag)
             db_obj.tags = tags
 

@@ -1,0 +1,24 @@
+"""add vector search capabilities
+
+Revision ID: 002_add_vector_search
+Revises: add_embedding_column
+Create Date: 2024-12-02 00:00:00.000000
+"""
+
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+def upgrade() -> None:
+    # Create vector extension
+    op.execute('CREATE EXTENSION IF NOT EXISTS vector')
+    
+    # Create index for vector similarity search
+    op.execute(
+        'CREATE INDEX IF NOT EXISTS ix_document_embedding ON document '
+        'USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)'
+    )
+
+def downgrade() -> None:
+    op.execute('DROP INDEX IF EXISTS ix_document_embedding')
+    op.execute('DROP EXTENSION IF EXISTS vector')

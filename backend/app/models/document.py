@@ -1,5 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, Float, ForeignKey, Table
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import ARRAY, FLOAT
+from sqlalchemy import Index
+from sqlalchemy import text
 from datetime import datetime
 from app.db.base_class import Base
 
@@ -22,7 +25,17 @@ class Document(Base):
     year_published = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    embedding = Column(ARRAY(Float), nullable=True)  # Added this line
+    embedding = Column(ARRAY(FLOAT(precision=6)), nullable=True)
     
+    __table_args__ = (
+        Index(
+            'ix_document_embedding',
+            'embedding',
+            postgresql_using='ivfflat',
+            postgresql_with={'lists': 100},
+            postgresql_ops={'embedding': 'vector_cosine_ops'}
+        ),
+    )
+        
     # Relationships
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")

@@ -5,6 +5,7 @@ import asyncio
 from typing import List, Optional, Dict
 from datetime import datetime
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from openai import OpenAI
 import aiohttp
 from cachetools import TTLCache
@@ -85,16 +86,59 @@ class SearchService:
         query: str,
         limit: int
     ) -> List[SearchResult]:
-        """Search internal database."""
+        """Search internal database using vector similarity."""
         try:
             logger.info("Starting internal search")
             query_embedding = self._get_embedding(query)
+            
+            # Single query that gets documents AND their tags
+            results = db.execute(
+                text("""
+                    WITH ranked_docs AS (
+                        SELECT 
+                            d.id,
+                            d.title,
+                            d.summary,
+                            d.source_url,
+                            d.year_published,
+                            -- Using cosine similarity with correct PostgreSQL syntax
+                            1 - (embedding::vector <-> :query_embedding::vector) as similarity,
+                            array_agg(DISTINCT jsonb_build_object(
+                                'id', t.id,
+                                'name', t.name,
+                                'category', t.category
+                            )) as tags
+                        FROM document d
+                        LEFT JOIN document_tags dt ON d.id = dt.document_id
+                        LEFT JOIN tag t ON dt.tag_id = t.id
+                        WHERE d.embedding IS NOT NULL
+                        GROUP BY d.id, d.title, d.summary, d.source_url, d.year_published, d.embedding
+                        -- Using correct operator for ordering
+                        ORDER BY embedding::vector <-> :query_embedding::vector
+                        LIMIT :limit
+                    )
+                    SELECT 
+                        id,
+                        title,
+                        summary,
+                        source_url,
+                        year_published,
+                        similarity,
+                        tags
+                    FROM ranked_docs
+                """),
+                {
+                    "query_embedding": query_embedding,
+                    "limit": limit
+                }
+            ).fetchall()
+            
             # This should not load all the documents and then apply a search, instead the search should get only needed documents
-            documents = db.query(Document).all()
-            logger.info(f"Found {len(documents)} documents in database: {documents}")
+            # documents = db.query(Document).all()
+            logger.info(f"Found {len(results)} documents in database: {results}")
             
             scored_documents = []
-            for doc in documents:
+            for doc in results:
                 try:
                     if doc.embedding is None:
                         logger.info("No embedding found for the document, create embedding")
@@ -118,7 +162,7 @@ class SearchService:
                         title=doc.title,
                         summary=doc.summary or "",
                         source_url=doc.source_url,
-                        relevance_score=float(similarity),
+                        relevance_score=float(doc.similarity),
                         tags=[
                             Tag(
                                 id=tag.id, 
