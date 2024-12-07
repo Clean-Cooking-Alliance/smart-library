@@ -155,6 +155,13 @@ docker-compose exec backend bash
 docker-compose exec frontend sh
 ```
 
+### Database clean up
+For any changes made to the initial migration scripts, the database should be recreated, dropping the DB volume 
+
+```
+docker volume rm clean-cooking-library_postgres_data
+```
+
 ## API Endpoints
 
 ### Documents

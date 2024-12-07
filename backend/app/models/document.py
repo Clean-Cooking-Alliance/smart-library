@@ -14,7 +14,7 @@ document_tags = Table(
 class Document(Base):
     __tablename__ = "document"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String, index=True)
     summary = Column(Text, nullable=True)
     content = Column(Text, nullable=True)

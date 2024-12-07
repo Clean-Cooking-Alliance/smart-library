@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -6,6 +7,9 @@ from app.models.document import Document
 from app.models.tag import Tag, TagCategory
 from app.schemas.document import DocumentCreate, DocumentUpdate
 from app.services.search_service import search_service 
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
     def _guess_tag_category(self, tag_name: str) -> TagCategory:
@@ -29,6 +33,7 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
     def create(self, db: Session, *, obj_in: DocumentCreate) -> Document:
         """Create a new document with tags and generate embedding."""
         # Create document object from input data
+        logger.info(f"The obj_in for document create: {obj_in}")
         db_obj = Document(
             title=obj_in.title,
             summary=obj_in.summary,
@@ -39,15 +44,18 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         # Handle tags
         if obj_in.tags:
             tags = []
-            for tag_name in obj_in.tags:
+            for tag_in in obj_in.tags:
                 # Get existing tag or create new one
-                tag = db.query(Tag).filter(Tag.name == tag_name).first()
-                if not tag:
-                    # Guess category for new tag
-                    category = self._guess_tag_category(tag_name)
-                    tag = Tag(name=tag_name, category=category)
-                    db.add(tag)
-                tags.append(tag)
+                if tag_in.name and tag_in.category:
+                    tag = db.query(Tag).filter(Tag.name == tag_in.name, Tag.category == tag_in.category).first()
+                    if not tag:
+                        # Guess category for new tag
+                        # category = self._guess_tag_category(tag_in.name)
+                        tag = Tag(name=tag_in.name, category=tag_in.category)
+                        logger.info(f"Creating new Tag: {tag}")            
+                        db.add(tag)
+                    tags.append(tag)
+            logger.info(f"The tags that are created: {tags}")
             db_obj.tags = tags
 
         # Generate and store embedding

@@ -9,12 +9,13 @@ class TagCategory(str, PyEnum):
     TOPIC = "topic"
     TECHNOLOGY = "technology"
     FRAMEWORK = "framework"
+    COUNTRY = "country"
     UNKNOWN = "unknown"
 
 class Tag(Base):
     __tablename__ = "tag"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
     category = Column(Enum(TagCategory), nullable=True)  # Made nullable for now
     

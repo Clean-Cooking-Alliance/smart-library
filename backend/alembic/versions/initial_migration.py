@@ -33,7 +33,7 @@ def upgrade() -> None:
         'tag',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('name', sa.String(), nullable=True),
-        sa.Column('category', sa.Enum('REGION', 'TOPIC', 'TECHNOLOGY', 'FRAMEWORK', name='tagcategory'), nullable=True),
+        sa.Column('category', sa.Enum('REGION', 'TOPIC', 'TECHNOLOGY', 'FRAMEWORK', 'COUNTRY', name='tagcategory'), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_tag_id'), 'tag', ['id'], unique=False)

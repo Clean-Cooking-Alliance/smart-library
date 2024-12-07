@@ -7,6 +7,7 @@ class TagCategory(str, Enum):
     TOPIC = "topic"
     TECHNOLOGY = "technology"
     FRAMEWORK = "framework"
+    COUNTRY = "country"
     UNKNOWN = "unknown"  # Default category
 
 class TagBase(BaseModel):
@@ -21,7 +22,7 @@ class TagUpdate(TagBase):
     category: Optional[TagCategory] = None
 
 class Tag(TagBase):
-    id: int
+    id: Optional[int] = None
 
     class Config:
         from_attributes = True

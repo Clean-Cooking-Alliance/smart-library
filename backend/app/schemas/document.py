@@ -10,11 +10,11 @@ class DocumentBase(BaseModel):
     year_published: Optional[int] = None
 
 class DocumentCreate(DocumentBase):
-    tags: Optional[List[str]] = []  # Tag names to be associated with the document
+    tags: Optional[List[Tag]] = []  # Tag names to be associated with the document
 
 class DocumentUpdate(DocumentBase):
     title: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[List[Tag]] = None
 
 class Document(DocumentBase):
     id: int

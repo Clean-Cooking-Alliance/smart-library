@@ -8,6 +8,7 @@ class TagCategory(str, Enum):
     TOPIC = "topic"
     TECHNOLOGY = "technology"
     FRAMEWORK = "framework"
+    COUNTRY = "country"
     UNKNOWN = "unknown"
 
 class Tag(BaseModel):
