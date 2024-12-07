@@ -1,14 +1,16 @@
 # backend/app/services/search_service.py
+
 import logging
 import json
 import asyncio
-from typing import List, Optional, Dict
+from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from openai import OpenAI
 import aiohttp
 from cachetools import TTLCache
 import numpy as np
+import faiss
 import traceback
 
 from app.core.config import settings
@@ -38,6 +40,31 @@ class SearchService:
             'mdpi.com'
         ]
         self.perplexity_url = "https://api.perplexity.ai/chat/completions"
+        self.index = None
+        self.document_map = {}
+
+    def initialize_faiss_index(self, db: Session):
+        """Initialize FAISS index with document embeddings from the database."""
+        try:
+            logger.info("Initializing FAISS index")
+            documents = db.query(Document).filter(Document.embedding.isnot(None)).all()
+            embeddings = []
+            ids = []
+            for doc in documents:
+                embeddings.append(doc.embedding)
+                ids.append(doc.id)
+                self.document_map[doc.id] = doc
+            
+            if embeddings:
+                dimension = len(embeddings[0])
+                self.index = faiss.IndexFlatL2(dimension)
+                self.index.add(np.array(embeddings, dtype=np.float32))
+                logger.info(f"Added {len(embeddings)} documents to FAISS index")
+            else:
+                logger.warning("No document embeddings found in the database")
+        except Exception as e:
+            logger.error(f"Error initializing FAISS index: {e}")
+            logger.error(traceback.format_exc())
 
     async def search(
         self,
@@ -49,7 +76,7 @@ class SearchService:
         """Perform hybrid search across internal and external sources."""
         try:
             logger.info(f"Starting search for query: {query}")
-            
+
             # Internal search
             try:
                 internal_results = await self._search_internal(db, query, limit)
@@ -85,57 +112,51 @@ class SearchService:
         query: str,
         limit: int
     ) -> List[SearchResult]:
-        """Search internal database."""
+        """Search internal database using FAISS."""
         try:
             logger.info("Starting internal search")
+            if self.index is None:
+                logger.info("FAISS index not initialized. Initializing now.")
+                self.initialize_faiss_index(db)
+
             query_embedding = self._get_embedding(query)
-            # This should not load all the documents and then apply a search, instead the search should get only needed documents
-            documents = db.query(Document).all()
-            logger.info(f"Found {len(documents)} documents in database: {documents}")
-            
+
+            if self.index is None or self.index.ntotal == 0:
+                logger.warning("FAISS index is empty or uninitialized.")
+                return []
+
+            # Search FAISS index
+            distances, indices = self.index.search(np.array([query_embedding], dtype=np.float32), limit)
+            logger.info(f"FAISS search returned {len(indices[0])} results")
+
             scored_documents = []
-            for doc in documents:
-                try:
-                    if doc.embedding is None:
-                        logger.info("No embedding found for the document, create embedding")
-                        metadata_text = self._create_metadata_text(doc)
-                        doc.embedding = self._get_embedding(metadata_text)
-                        db.add(doc)
-                        db.commit()
-                        logger.info(f"Generated embedding for document {doc.id}")
-
-                    similarity = self._calculate_similarity(query_embedding, doc.embedding)
-                    
-                    # Create tag objects
-                    tags = [
-                        Tag(id=tag.id, name=tag.name, category=TagCategory(tag.category.value if tag.category else "unknown"))
-                        for tag in doc.tags
-                    ]
-                    logger.info("Tags created {tags}")
-                    
-                    scored_documents.append(SearchResult(
-                        document_id=doc.id,
-                        title=doc.title,
-                        summary=doc.summary or "",
-                        source_url=doc.source_url,
-                        relevance_score=float(similarity),
-                        tags=[
-                            Tag(
-                                id=tag.id, 
-                                name=tag.name, 
-                                category=TagCategory(tag.category.value if tag.category else "unknown")
-                            ) 
-                            for tag in doc.tags
-                        ],
-                        source="internal"
-                    ))
-                except Exception as e:
-                    logger.error(f"Error processing document {doc.id}: {str(e)}")
-                    print(traceback.format_exc())
+            for i, idx in enumerate(indices[0]):
+                if idx == -1:
                     continue
+                document_id = list(self.document_map.keys())[idx]
+                document = self.document_map[document_id]
 
-            scored_documents.sort(key=lambda x: x.relevance_score, reverse=True)
-            return scored_documents[:limit]
+                # Create tags
+                tags = [
+                    Tag(
+                        id=tag.id,
+                        name=tag.name,
+                        category=TagCategory(tag.category.value if tag.category else "unknown")
+                    ) for tag in document.tags
+                ]
+
+                scored_documents.append(SearchResult(
+                    document_id=document.id,
+                    title=document.title,
+                    summary=document.summary or "",
+                    source_url=document.source_url,
+                    relevance_score=float(1 - distances[0][i]),  # Convert distance to similarity
+                    tags=tags,
+                    source="internal"
+                ))
+
+            print(scored_documents)
+            return scored_documents
 
         except Exception as e:
             logger.error(f"Internal search error: {str(e)}")
@@ -160,7 +181,6 @@ class SearchService:
                     "Content-Type": "application/json"
                 }
 
-                # Create domain-aware query
                 domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
                 enhanced_query = (
                     f"Find research papers and articles about: {query}. "
@@ -195,7 +215,7 @@ class SearchService:
                         self.perplexity_url,
                         headers=headers,
                         json=payload,
-                        timeout=30  # 30 seconds timeout
+                        timeout=30
                     ) as response:
                         if response.status != 200:
                             error_text = await response.text()
@@ -203,40 +223,22 @@ class SearchService:
                             return []
 
                         data = await response.json()
-                        # Log the raw response
-                        logger.info(f"Raw Perplexity response: {data}")
                         content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
-                        logger.info(f"Content from response: {content}")
-                        
-                        # Parse the JSON response
-                        try:
-                            # Extract JSON from markdown and parse it
-                            json_content = self._extract_json_from_markdown(content)
-                            logger.info(f"Extracted JSON content: {json_content}")
-                            
-                            # Parse the JSON array directly since it's not wrapped in a 'results' object
-                            results = json.loads(json_content)
-                            if not isinstance(results, list):
-                                results = [results]  # Handle single result case
-                            
-                            processed_results = []
-                            for result in results[:limit]:
-                                if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
-                                    processed_results.append(ExternalSearchResult(
-                                        title=result['title'],
-                                        summary=result['summary'],  # Limit summary length
-                                        source_url=result['url'],
-                                        relevance_score=0.8,  # Default score
-                                        source="external"
-                                    ))
-                            
-                            logger.info(f"Found {len(processed_results)} external results")
-                            return processed_results
+                        json_content = self._extract_json_from_markdown(content)
 
-                        except json.JSONDecodeError as e:
-                            logger.error(f"JSON parsing error: {e}")
-                            logger.error(f"Failed to parse Perplexity response: {str(e)}")
-                            return []
+                        results = json.loads(json_content)
+                        processed_results = []
+                        for result in results[:limit]:
+                            if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
+                                processed_results.append(ExternalSearchResult(
+                                    title=result['title'],
+                                    summary=result['summary'],
+                                    source_url=result['url'],
+                                    relevance_score=0.8,
+                                    source="external"
+                                ))
+
+                        return processed_results
 
                 except asyncio.TimeoutError:
                     logger.error("Perplexity API request timed out")
@@ -248,23 +250,6 @@ class SearchService:
         except Exception as e:
             logger.error(f"External search error: {str(e)}")
             return []
-
-    async def _generate_summary(self, query: str, content: str) -> str:
-        """Generate context-aware summary using OpenAI."""
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "Generate a brief, relevant summary focused on clean cooking research aspects."},
-                    {"role": "user", "content": f"For the query '{query}', summarize this content:\n{content}"}
-                ],
-                max_tokens=150,
-                temperature=0.3
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            logger.error(f"Summary generation error: {str(e)}")
-            return content[:200] + "..."
 
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI."""
@@ -278,35 +263,9 @@ class SearchService:
             logger.error(f"Error getting embedding: {str(e)}")
             raise
 
-    def _calculate_similarity(self, embedding1: List[float], embedding2: List[float]) -> float:
-        """Calculate cosine similarity between embeddings."""
-        logger.info("Calculating Similarity between embeddings")
-        try:
-            a = np.array(embedding1)
-            b = np.array(embedding2)
-            return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
-        except Exception as e:
-            logger.error(f"Error calculating similarity: {str(e)}")
-            return 0.0
-
-    def _create_metadata_text(self, doc: Document) -> str:
-        """Create searchable text from document metadata."""
-        try:
-            parts = [
-                f"Title: {doc.title}",
-                f"Summary: {doc.summary}" if doc.summary else "",
-                f"Year: {doc.year_published}" if doc.year_published else "",
-                f"Tags: {', '.join(tag.name for tag in doc.tags)}" if doc.tags else ""
-            ]
-            return " ".join(filter(None, parts))
-        except Exception as e:
-            logger.error(f"Error creating metadata text: {str(e)}")
-            return doc.title  # Fallback to just title if there's an error
-        
     def _extract_json_from_markdown(self, content: str) -> str:
         """Extract JSON from markdown-formatted string."""
         try:
-            # Find content between ```json and ```
             import re
             json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
             if json_match:

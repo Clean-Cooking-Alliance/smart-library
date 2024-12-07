@@ -7,13 +7,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=user
+      - POSTGRES_USER=ria2024
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=cleandb
+      - POSTGRES_DB=mydatabase
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d cleandb"]
+      test: ["CMD-SHELL", "pg_isready -U ria2024 -d mydatabase"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,7 +27,7 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/cleandb
+      - DATABASE_URL=postgresql://ria2024:password@db:5432/mydatabase
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
