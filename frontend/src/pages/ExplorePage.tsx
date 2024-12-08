@@ -1,7 +1,6 @@
 // src/pages/ExplorePage.tsx
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Map, Users, Calendar, Lightbulb } from 'lucide-react';
 
@@ -40,6 +39,12 @@ const frameworks: Framework[] = [
 ];
 
 export const ExplorePage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleCardClick = (frameworkId: string) => {
+    navigate(`/explore/${frameworkId}`);
+  };
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Explore Clean Cooking Research</h1>
@@ -49,7 +54,7 @@ export const ExplorePage: React.FC = () => {
           <Card 
             key={framework.id}
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => window.location.href = `/explore/${framework.id}`}
+            onClick={() => handleCardClick(framework.id)}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
