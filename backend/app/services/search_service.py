@@ -112,7 +112,7 @@ class SearchService:
         query: str,
         limit: int
     ) -> List[SearchResult]:
-        """Search internal database using FAISS."""
+        """Search internal database using FAISS with tags included."""
         try:
             logger.info("Starting internal search")
             if self.index is None:
@@ -136,7 +136,7 @@ class SearchService:
                 document_id = list(self.document_map.keys())[idx]
                 document = self.document_map[document_id]
 
-                # Create tags
+                # Include tags in the document data
                 tags = [
                     Tag(
                         id=tag.id,
@@ -155,7 +155,6 @@ class SearchService:
                     source="internal"
                 ))
 
-            print(scored_documents)
             return scored_documents
 
         except Exception as e:
@@ -234,7 +233,7 @@ class SearchService:
                                     title=result['title'],
                                     summary=result['summary'],
                                     source_url=result['url'],
-                                    relevance_score=0.8,
+                                    relevance_score=self._calculate_relevance_score(result['url']),
                                     source="external"
                                 ))
 
@@ -250,6 +249,28 @@ class SearchService:
         except Exception as e:
             logger.error(f"External search error: {str(e)}")
             return []
+        
+    def _calculate_relevance_score(self, url: str) -> float:
+        """Calculate relevance score based on domain presence in whitelist and content quality."""
+        domain = url.lower()
+        
+        # High credibility domains
+        trusted_domains = ['who.int', 'nasa.gov', 'acm.org', 'edu']
+        if any(trusted_domain in domain for trusted_domain in trusted_domains):
+            return 0.9  # High trust score for highly credible sources
+        
+        # Moderate credibility domains
+        moderate_domains = ['sciencedirect.com', 'researchgate.net', 'jstor.org'] + self.whitelisted_domains
+        if any(moderate_domain in domain for moderate_domain in moderate_domains):
+            return 0.7  # Moderate trust score for reputable research and academic sources
+        
+        # Lower credibility domains
+        general_domains = ['medium.com', 'wordpress.com', 'blogspot.com']
+        if any(general_domain in domain for general_domain in general_domains):
+            return 0.5  # Default score for general blogging and less formal platforms
+        
+        # If none of the above, assign the default score
+        return 0.5  # Base score for other domains not specifically categorized
 
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI."""
