@@ -4,11 +4,12 @@ import axios from 'axios';
 import { SearchBar } from '../components/search/SearchBar';
 import CollapsibleSummary from '../components/ui/collapsiblesummary';
 import TagFilter from '../components/ui/tagfilter';
+import { Badge } from '@/components/ui';
 
 interface Tag {
   id?: number;
   name: string;
-  category: string;
+  category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
 }
 
 interface BaseSearchResult {
@@ -88,12 +89,13 @@ export const SearchPage: React.FC = () => {
               {'tags' in result && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {(result as InternalSearchResult).tags.map((tag, tagIndex) => (
-                    <span
+                    <Badge
                       key={tagIndex}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      variant={tag.category}
+                      className="cursor-pointer"
                     >
                       {tag.name}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -140,7 +142,8 @@ export const SearchPage: React.FC = () => {
           {data.internal_results.length > 0 || data.external_results.length > 0 ? (
             <div className="w-1/4 pr-4">
               <TagFilter
-                tags={data.internal_results.flatMap((result) => result.tags)}
+                tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map(tag => tag.id))))
+                  .map(id => data.internal_results.flatMap((result) => result.tags).find(tag => tag.id === id)!)}
                 selectedTags={selectedTags}
                 onTagChange={handleTagChange}
               />
