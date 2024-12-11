@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { SearchBar } from '../components/search/SearchBar';
 import CollapsibleSummary from '../components/ui/collapsiblesummary';
 import TagFilter from '../components/ui/tagfilter';
 import { Badge } from '@/components/ui';
+import { SearchResults } from '../components/search/SearchResults';
 
 interface Tag {
   id?: number;
@@ -25,7 +26,7 @@ interface InternalSearchResult extends BaseSearchResult {
   tags: Tag[];
 }
 
-interface ExternalSearchResult extends BaseSearchResult {}
+interface ExternalSearchResult extends BaseSearchResult { }
 
 interface CombinedSearchResponse {
   internal_results: InternalSearchResult[];
@@ -33,8 +34,10 @@ interface CombinedSearchResponse {
 }
 
 export const SearchPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [filterByTag, setFilterByTag] = useState(false);
+  const [matchingTag, setMatchingTag] = useState<Tag | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
@@ -53,8 +56,17 @@ export const SearchPage: React.FC = () => {
     enabled: !!searchQuery
   });
 
+  useEffect(() => {
+    if (data) {
+      const allTags = data.internal_results.flatMap(result => result.tags);
+      const matchingTag = allTags.find(tag => tag.name.toLowerCase() === searchQuery.toLowerCase());
+      setMatchingTag(matchingTag || null);
+    }
+  }, [data, searchQuery]);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setFilterByTag(false);
   };
 
   const handleTagChange = (tagId: number) => {
@@ -74,8 +86,17 @@ export const SearchPage: React.FC = () => {
     );
   };
 
+  const filterResultsByMatchingTag = (results: BaseSearchResult[]) => {
+    if (!filterByTag || !matchingTag) return results;
+    return results.filter((result) =>
+      'tags' in result
+        ? (result as InternalSearchResult).tags.some((tag) => tag.id === matchingTag.id)
+        : false
+    );
+  };
+
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
-    const filteredResults = filterResultsByTags(results);
+    const filteredResults = filterResultsByTags(filterResultsByMatchingTag(results));
     if (!filteredResults.length) return null;
 
     return (
@@ -122,9 +143,9 @@ export const SearchPage: React.FC = () => {
   return (
     <div className="container mx-auto py-6 px-4">
       <h1 className="text-2xl font-bold mb-6">Clean Cooking Research Search</h1>
-      
+
       <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-      
+
       {error && (
         <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
           Error: {error instanceof Error ? error.message : 'An error occurred'}
@@ -137,9 +158,32 @@ export const SearchPage: React.FC = () => {
         </div>
       )}
 
+    {matchingTag && (
+      <div className="mt-4 flex justify-start items-center">
+        <label className="flex items-center space-x-2">
+          <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+            <input
+              type="checkbox"
+              name="toggle"
+              id="toggle"
+              checked={filterByTag}
+              onChange={() => setFilterByTag(!filterByTag)}
+              className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+            />
+            <label
+              htmlFor="toggle"
+              className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
+            ></label>
+          </div>
+          <span>Filter results by tag:</span>
+          <Badge variant={matchingTag.category}>{matchingTag.name}</Badge>
+        </label>
+      </div>
+    )}
+
       {data && (
         <div className="flex mt-8">
-          {data.internal_results.length > 0 || data.external_results.length > 0 ? (
+          {data.internal_results.length > 0 && (
             <div className="w-1/4 pr-4">
               <TagFilter
                 tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map(tag => tag.id))))
@@ -148,11 +192,11 @@ export const SearchPage: React.FC = () => {
                 onTagChange={handleTagChange}
               />
             </div>
-          ) : null}
+          )}
           <div className="w-3/4">
             {renderSearchResults(data.internal_results, 'Internal Library Results')}
             {renderSearchResults(data.external_results, 'External Research Results')}
-            
+
             {!data.internal_results.length && !data.external_results.length && (
               <div className="text-center text-gray-600">
                 No results found for "{searchQuery}"

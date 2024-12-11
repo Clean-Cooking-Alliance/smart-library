@@ -46,3 +46,52 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Toggle Switch */
+.toggle-checkbox:checked {
+  right: 0;
+  border-color: #4f46e5;
+  background-color: #4f46e5;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #4f46e5;
+}
+
+.toggle-checkbox {
+  right: 4px;
+  border-color: #d1d5db;
+  background-color: #d1d5db;
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.toggle-label {
+  width: 2.5rem;
+  height: 1.5rem;
+  background-color: #d1d5db;
+  border-radius: 9999px;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.toggle-checkbox:checked + .toggle-label::before {
+  transform: translateX(1.15rem);
+}
+
+.toggle-label::before {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  background-color: white;
+  border-radius: 9999px;
+  transition: transform 0.2s;
+}
