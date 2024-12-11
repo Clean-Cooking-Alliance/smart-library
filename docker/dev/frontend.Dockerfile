@@ -24,7 +24,8 @@ RUN npm install \
     @types/node \
     @types/react \
     @types/react-dom \
-    typescript
+    typescript \
+    xlsx
 
 # Copy the rest of the application code
 COPY . .
