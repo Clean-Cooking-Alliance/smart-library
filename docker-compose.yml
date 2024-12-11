@@ -6,13 +6,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=ria2024
+      - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=mydatabase
+      - POSTGRES_DB=cleandb
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ria2024 -d mydatabase"]
+      test: ["CMD-SHELL", "pg_isready -U user -d cleandb"]
       interval: 5s
       timeout: 5s
       retries: 5
