@@ -51,6 +51,11 @@ class SearchService:
             embeddings = []
             ids = []
             for doc in documents:
+                # Regenerate embedding if needed
+                if not doc.embedding:
+                    doc.embedding = self._get_embedding(self._create_metadata_text(doc))
+                    db.add(doc)
+                    db.commit()
                 embeddings.append(doc.embedding)
                 ids.append(doc.id)
                 self.document_map[doc.id] = doc
@@ -283,6 +288,15 @@ class SearchService:
         except Exception as e:
             logger.error(f"Error getting embedding: {str(e)}")
             raise
+
+    def _create_metadata_text(self, document: Document) -> str:
+        """Create a text representation of document metadata for embedding."""
+        parts = [
+            f"Title: {document.title}",
+            f"Summary: {document.summary}" if document.summary else "",
+            f"Tags: {', '.join(tag.name for tag in document.tags)}" if document.tags else ""
+        ]
+        return " ".join(filter(None, parts))
 
     def _extract_json_from_markdown(self, content: str) -> str:
         """Extract JSON from markdown-formatted string."""
