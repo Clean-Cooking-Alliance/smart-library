@@ -88,8 +88,9 @@ class SearchService:
                 logger.info(f"Internal search found {len(internal_results)} results")
             except Exception as e:
                 logger.error(f"Internal search error: {str(e)}")
-                logger.error(traceback.format_exc())
                 internal_results = []
+                
+            urls = [result.source_url for result in internal_results]
 
             # External search
             external_results = []
@@ -99,7 +100,11 @@ class SearchService:
                     logger.info(f"External search found {len(external_results)} results")
                 except Exception as e:
                     logger.error(f"External search error: {str(e)}")
-                    logger.error(traceback.format_exc())
+            
+            # Remove duplicate results
+            for result in external_results:
+                if result.source_url in urls:
+                    external_results.remove(result)
 
             return CombinedSearchResponse(
                 internal_results=internal_results,
@@ -108,7 +113,6 @@ class SearchService:
 
         except Exception as e:
             logger.error(f"Search error: {str(e)}")
-            logger.error(traceback.format_exc())
             raise
 
     async def _search_internal(
