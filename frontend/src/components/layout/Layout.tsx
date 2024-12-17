@@ -24,36 +24,38 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       const jsonData = XLSX.utils.sheet_to_json(sheet);
 
       const createJson = (row: any) => {
-        const tags: any[] = [];
+        if (row) {
+          const tags: any[] = [];
 
-        if (row['Region']) {
-          const regions = row['Region'].split('\n');
-          regions.forEach((region: string) => {
-            tags.push({ name: region.replace("- ", "").trim(), category: "region" });
-          });
+          if (row['Region']) {
+            const regions = row['Region'].split('\n');
+            regions.forEach((region: string) => {
+              tags.push({ name: region.replace("- ", "").trim(), category: "region" });
+            });
+          }
+
+          if (row['Country'] && !row['Country'].toLowerCase().includes('not specific')) {
+            const countries = row['Country'].split('\n');
+            countries.forEach((country: string) => {
+              tags.push({ name: country.replace("- ", "").trim(), category: "country" });
+            });
+          }
+
+          if (row['Topic']) {
+            const topics = row['Topic'].split('\n').map((topic: string) => topic.trim().replace("- ", ""));
+            topics.forEach((topic: string) => {
+              tags.push({ name: topic, category: "topic" });
+            });
+          }
+
+          return {
+            title: row['Title'],
+            summary: row['Summary'],
+            source_url: row['Link'],
+            year_published: parseInt(row['Year Published'], 10),
+            tags: tags
+          };
         }
-
-        if (row['Country'] && !row['Country'].toLowerCase().includes('not specific')) {
-          const countries = row['Country'].split('\n');
-          countries.forEach((country: string) => {
-            tags.push({ name: country.replace("- ", "").trim(), category: "country" });
-          });
-        }
-
-        if (row['Topic']) {
-          const topics = row['Topic'].split('\n').map((topic: string) => topic.trim().replace("- ", ""));
-          topics.forEach((topic: string) => {
-            tags.push({ name: topic, category: "topic" });
-          });
-        }
-
-        return {
-          title: row['Title'],
-          summary: row['Summary'],
-          source_url: row['Link'],
-          year_published: parseInt(row['Year Published'], 10),
-          tags: tags
-        };
       };
 
       const jsonPayloads = jsonData.map(createJson);
@@ -87,14 +89,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="max-w-7xl mx-auto px-4 py-4">
         <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-full">
           <TabsList>
-            <TabsTrigger 
-              value="search" 
+            <TabsTrigger
+              value="search"
               onClick={() => navigate('/')}
             >
               Focus Mode
             </TabsTrigger>
-            <TabsTrigger 
-              value="explore" 
+            <TabsTrigger
+              value="explore"
               onClick={() => navigate('/explore')}
             >
               Explore Mode
