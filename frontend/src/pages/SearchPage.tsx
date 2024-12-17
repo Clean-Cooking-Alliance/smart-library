@@ -66,6 +66,7 @@ export const SearchPage: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setSelectedTags([]);
     setFilterByTag(false);
   };
 
