@@ -15,31 +15,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto py-6 flex items-center justify-left">
-          <h1 className="text-3xl font-bold text-gray-900 px-4">Clean Cooking Smart Library</h1>
+        <div className="max-w-7xl mx-auto py-6 flex items-center justify-around">
+          <h1 className="text-3xl font-bold text-gray-900">Clean Cooking Smart Library</h1>
           {/* Navigation */}
-          <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-half max-w-md px-4">
+          <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-half max-w-md">
             <TabsList className="flex space-x-4">
               <TabsTrigger
                 value="search"
                 onClick={() => navigate('/')}
               >
-                Focus Mode
+                Home
               </TabsTrigger>
               <TabsTrigger
                 value="explore"
                 onClick={() => navigate('/explore')}
               >
-                Explore Mode
+                Explore
               </TabsTrigger>
             </TabsList>
           </Tabs>
           <div className="flex space-x-4 items-center">
-            {/* Bookmark Icon */}
-            <BookmarkIcon className="w-6 h-6 text-gray-600" />
-
-            {/* Profile Icon */}
-            <PersonIcon className="w-6 h-6 text-gray-600" />
+            <BookmarkIcon className="w-6 h-6 text-blue-600" />
+            <PersonIcon className="w-6 h-6 text-blue-600" />
           </div>
         </div>
       </header>
