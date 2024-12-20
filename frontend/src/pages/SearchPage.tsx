@@ -121,7 +121,7 @@ export const SearchPage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <h1 className="text-2xl font-bold mb-6">Clean Cooking Research Search</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">Ask Me About Clean Cooking</h1>
       
       <SearchBar onSearch={handleSearch} isLoading={isLoading} />
       
