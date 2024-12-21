@@ -165,7 +165,11 @@ export const SearchPage: React.FC = () => {
     { id: 'e6-8', source: '6', target: '8' },
     { id: 'e7-8', source: '7', target: '8' },
   ];
-    return (<div style={{ width: '100vw', height: '100vh' }}> <ReactFlow nodes={initialNodes} edges={initialEdges} style={styles}/> </div>);
+  return (<div style={{ width: '100vw', height: '100vh' }}> <ReactFlow nodes={initialNodes} edges={initialEdges} style={styles} zoomOnScroll={false}
+    zoomOnPinch={false}
+    zoomOnDoubleClick={false}
+    panOnScroll={false} // Optional: Allows panning
+  /> </div>);
   };
 
   const LineCurve = () => {
