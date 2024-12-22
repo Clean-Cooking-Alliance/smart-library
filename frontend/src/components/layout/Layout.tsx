@@ -19,7 +19,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <h1 className="text-3xl font-bold text-gray-900">Clean Cooking Smart Library</h1>
           {/* Navigation */}
           <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-half max-w-md">
-            <TabsList className="flex space-x-4">
+            <TabsList className="flex">
               <TabsTrigger
                 value="search"
                 onClick={() => navigate('/')}

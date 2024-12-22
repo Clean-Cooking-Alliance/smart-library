@@ -152,30 +152,30 @@ const LineCurve = () => {
         <path
           d="M 50 150 
           C 100 100, 150 50, 200 50 
-          S 300 100, 350 100"
+          S 300 100, 390 100"
           fill="none"
           stroke="#66cc66"
           strokeWidth="4"
         />
 
         {/* Dotted vertical lines */}
-        <line x1="50" y1="150" x2="50" y2="10" stroke="#66cc66" strokeDasharray="4" />
-        <line x1="300" y1="150" x2="300" y2="10" stroke="#66cc66" strokeDasharray="4" />
-        <line x1="200" y1="150" x2="200" y2="10" stroke="#66cc66" strokeDasharray="4" />
-        <line x1="350" y1="150" x2="350" y2="10" stroke="#66cc66" strokeDasharray="4" />
+        <line x1="50" y1="200" x2="50" y2="10" stroke="#66cc66" strokeDasharray="4" />
+        <line x1="150" y1="200" x2="150" y2="10" stroke="#66cc66" strokeDasharray="4" />
+        <line x1="230" y1="200" x2="230" y2="10" stroke="#66cc66" strokeDasharray="4" />
+        <line x1="340" y1="200" x2="340" y2="10" stroke="#66cc66" strokeDasharray="4" />
 
 
         {/* Labels */}
-        <text x="50" y="170" fill="#fff" fontSize="12" fontWeight="bold">
+        <text x="50" y="185" fill="#fff" fontSize="12" fontWeight="bold">
           Introduction
         </text>
-        <text x="150" y="30" fill="#fff" fontSize="12" fontWeight="bold">
+        <text x="160" y="40" fill="#fff" fontSize="12" fontWeight="bold">
           Growth
         </text>
-        <text x="250" y="30" fill="#fff" fontSize="12" fontWeight="bold">
+        <text x="240" y="50" fill="#fff" fontSize="12" fontWeight="bold">
           Maturity
         </text>
-        <text x="350" y="170" fill="#fff" fontSize="12" fontWeight="bold">
+        <text x="350" y="120" fill="#fff" fontSize="12" fontWeight="bold">
           Decline
         </text>
       </svg>
@@ -186,8 +186,8 @@ const LineCurve = () => {
 export const ExplorePage: React.FC = () => {
   return (
     <div className="mt-4 text-center py-6 items-start ml-12 mr-6">
-      <h1 className="text-2xl font-bold text-left">Not sure where to start?</h1>
-      <hr className="max-w-xs mb-4"></hr>
+      {/* <h1 className="text-2xl font-bold text-left">Not sure where to start?</h1> */}
+      {/* <hr className="max-w-xs mb-4"></hr> */}
       <div className="flex flex-col md:flex-row justify-center md:justify-between">
         <div className="flex-1">
           <h2 className="text-lg font-bold text-left">Explore by region</h2>
@@ -197,7 +197,7 @@ export const ExplorePage: React.FC = () => {
         <div className="flex-1 mb-4">
           <h2 className="text-lg font-bold text-left">Explore by customer lifecycle</h2>
           <h3 className="text-left text-sm mb-4">Click the customer lifecycle step you'd like to explore</h3>
-          <Diagram/>
+          <Diagram />
         </div>
       </div>
       <div className="flex flex-col md:flex-row justify-center md:justify-between">
