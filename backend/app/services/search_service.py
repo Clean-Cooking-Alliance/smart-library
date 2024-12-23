@@ -12,6 +12,7 @@ from cachetools import TTLCache
 import numpy as np
 import faiss
 import traceback
+from sentence_transformers import SentenceTransformer
 
 from app.core.config import settings
 from app.models.document import Document
@@ -275,11 +276,10 @@ class SearchService:
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI."""
         try:
-            response = self.client.embeddings.create(
-                input=text,
-                model="text-embedding-ada-002"
-            )
-            return response.data[0].embedding
+            model = SentenceTransformer('thenlper/gte-small')
+            embedding =  model.encode(text)
+            embedding_list = [float(value) for value in embedding] 
+            return embedding_list
         except Exception as e:
             logger.error(f"Error getting embedding: {str(e)}")
             raise

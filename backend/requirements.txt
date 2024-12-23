@@ -19,3 +19,7 @@ email-validator==2.1.0
 numpy==1.26.2
 scikit-learn==1.3.2  # useful for more advanced vector operations
 faiss-cpu==1.9.0.post1 # useful for more advanced vector operations
+torch
+torchvision
+transformers
+sentence-transformers
