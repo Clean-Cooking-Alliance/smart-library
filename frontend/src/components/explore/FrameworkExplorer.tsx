@@ -2,8 +2,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CollapsibleSummary from '../ui/collapsiblesummary';
 
 interface Document {
   document_id: number;
@@ -19,7 +20,7 @@ interface Document {
 
 export const FrameworkExplorer: React.FC = () => {
   const { framework } = useParams<{ framework: string }>();
-
+  const navigate = useNavigate();
   const { data: documents, isLoading } = useQuery({
     queryKey: ['framework', framework],
     queryFn: async () => {
@@ -34,6 +35,9 @@ export const FrameworkExplorer: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
+      <button onClick={() => navigate('/explore')} className="mb-4 text-blue-600 hover:underline">
+        ← Back
+      </button>
       <h1 className="text-2xl font-bold mb-6">
         Exploring by {framework?.replace('-', ' ')}
       </h1>
@@ -45,7 +49,7 @@ export const FrameworkExplorer: React.FC = () => {
               <CardTitle>{doc.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 mb-4">{doc.summary}</p>
+              <CollapsibleSummary summary={doc.summary} />
               <div className="flex flex-wrap gap-2">
                 {doc.tags.map((tag) => (
                   <span 

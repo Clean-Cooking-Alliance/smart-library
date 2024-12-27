@@ -60,3 +60,4 @@ coverage/
 # Environment variables
 .env
 .env.*
+docker-compose.yml

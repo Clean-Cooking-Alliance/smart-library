@@ -39,7 +39,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading
                         <p className="text-gray-600 mb-4">{result.summary}</p>
                         <div className="flex flex-wrap gap-2">
                             {result.tags.map((tag) => (
-                                <Badge key={tag.id} variant="secondary">
+                                <Badge key={tag.id} variant={tag.category}>
                                     {tag.name}
                                 </Badge>
                             ))}

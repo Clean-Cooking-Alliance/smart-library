@@ -1,9 +1,8 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
   db:
-    image: postgres:14-alpine
+    image: ankane/pgvector:latest
     ports:
       - "5432:5432"
     environment:
@@ -12,6 +11,7 @@ services:
       - POSTGRES_DB=cleandb
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-vector-extension.sql:/docker-entrypoint-initdb.d/init-vector-extension.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d cleandb"]
       interval: 5s
@@ -26,11 +26,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/cleandb
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
-      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy 
@@ -49,6 +46,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    env_file:
+      - .env
     environment:
       - VITE_API_URL=http://localhost:8000
       - NODE_ENV=development

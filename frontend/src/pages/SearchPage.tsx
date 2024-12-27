@@ -2,11 +2,14 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { SearchBar } from '../components/search/SearchBar';
+import CollapsibleSummary from '../components/ui/collapsiblesummary';
+import TagFilter from '../components/ui/tagfilter';
+import { Badge } from '@/components/ui';
 
 interface Tag {
   id?: number;
   name: string;
-  category: string;
+  category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
 }
 
 interface BaseSearchResult {
@@ -31,6 +34,7 @@ interface CombinedSearchResponse {
 
 export const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
@@ -53,27 +57,45 @@ export const SearchPage: React.FC = () => {
     setSearchQuery(query);
   };
 
+  const handleTagChange = (tagId: number) => {
+    setSelectedTags((prevSelectedTags) =>
+      prevSelectedTags.includes(tagId)
+        ? prevSelectedTags.filter((id) => id !== tagId)
+        : [...prevSelectedTags, tagId]
+    );
+  };
+
+  const filterResultsByTags = (results: BaseSearchResult[]) => {
+    if (selectedTags.length === 0) return results;
+    return results.filter((result) =>
+      'tags' in result
+        ? (result as InternalSearchResult).tags.some((tag) => selectedTags.includes(tag.id!))
+        : false
+    );
+  };
+
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
-    if (!results.length) return null;
+    const filteredResults = filterResultsByTags(results);
+    if (!filteredResults.length) return null;
 
     return (
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
         <div className="space-y-4">
-          {results.map((result, index) => (
+          {filteredResults.map((result, index) => (
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-              <p className="text-gray-600 mb-3">{result.summary}</p>
-              {/* Add tags if result is internal */}
+              <CollapsibleSummary summary={result.summary} />
               {'tags' in result && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {(result as InternalSearchResult).tags.map((tag, tagIndex) => (
-                    <span
+                    <Badge
                       key={tagIndex}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                      variant={tag.category}
+                      className="cursor-pointer"
                     >
                       {tag.name}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -116,15 +138,27 @@ export const SearchPage: React.FC = () => {
       )}
 
       {data && (
-        <div className="mt-8">
-          {renderSearchResults(data.internal_results, 'Internal Library Results')}
-          {renderSearchResults(data.external_results, 'External Research Results')}
-          
-          {!data.internal_results.length && !data.external_results.length && (
-            <div className="text-center text-gray-600">
-              No results found for "{searchQuery}"
+        <div className="flex mt-8">
+          {data.internal_results.length > 0 || data.external_results.length > 0 ? (
+            <div className="w-1/4 pr-4">
+              <TagFilter
+                tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map(tag => tag.id))))
+                  .map(id => data.internal_results.flatMap((result) => result.tags).find(tag => tag.id === id)!)}
+                selectedTags={selectedTags}
+                onTagChange={handleTagChange}
+              />
             </div>
-          )}
+          ) : null}
+          <div className="w-3/4">
+            {renderSearchResults(data.internal_results, 'Internal Library Results')}
+            {renderSearchResults(data.external_results, 'External Research Results')}
+            
+            {!data.internal_results.length && !data.external_results.length && (
+              <div className="text-center text-gray-600">
+                No results found for "{searchQuery}"
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
