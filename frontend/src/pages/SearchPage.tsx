@@ -31,7 +31,7 @@ interface InternalSearchResult extends BaseSearchResult {
   tags: Tag[];
 }
 
-interface ExternalSearchResult extends BaseSearchResult { }
+interface ExternalSearchResult extends BaseSearchResult {}
 
 interface CombinedSearchResponse {
   internal_results: InternalSearchResult[];
@@ -51,12 +51,12 @@ export const SearchPage: React.FC = () => {
         {
           query: searchQuery,
           limit: 10,
-          include_external: true
+          include_external: true,
         }
       );
       return response.data;
     },
-    enabled: !!searchQuery
+    enabled: !!searchQuery,
   });
 
   const handleSearch = (query: string) => {
@@ -126,48 +126,45 @@ export const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">Ask Me About Clean Cooking</h1>
-
-      <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
-          Error: {error instanceof Error ? error.message : 'An error occurred'}
+    <div className="container mx-auto py-6 px-4 justify-center">
+      <div className="flex flex-col items-center text-center">
+        <h1 className="text-2xl font-bold mb-6">Ask Me About Clean Cooking</h1>
+        <div className="w-full max-w-md mb-6">
+          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
         </div>
-      )}
-
-      {isLoading && (
-        <div className="mt-4 text-center text-gray-600">
-          Searching...
-        </div>
-      )}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
+            Error: {error instanceof Error ? error.message : 'An error occurred'}
+          </div>
+        )}
+        {isLoading && <div className="mt-4 text-gray-600">Searching...</div>}
+      </div>
 
       {!data && (
-        <div className="mt-4 text-center py-6 items-start ml-12 mr-6">
-          <h1 className="text-2xl font-bold text-left">Not sure where to start?</h1>
-          <hr className="max-w-xs mb-4"></hr>
-          <div className="flex flex-col md:flex-row justify-center md:justify-between">
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-left">Explore by region</h2>
-              <h3 className="text-left text-sm">Click on a region or country to explore relevant literature</h3>
+        <div className="mt-4 text-left">
+          <h2 className="text-2xl font-bold mb-4">Not sure where to start?</h2>
+          <hr className="mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-bold">Explore by region</h3>
+              <p>Click on a region or country to explore relevant literature.</p>
               <MapChart />
             </div>
-            <div className="flex-1 mb-4">
-              <h2 className="text-lg font-bold text-left">Explore by customer lifecycle</h2>
-              <h3 className="text-left text-sm">Click the customer lifecycle step you'd like to explore</h3>
+            <div>
+              <h3 className="text-lg font-bold">Explore by customer lifecycle</h3>
+              <p>Click the customer lifecycle step you'd like to explore.</p>
               <Diagram />
             </div>
           </div>
-          <div className="flex flex-col md:flex-row justify-center md:justify-between">
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-left">Explore by product lifecycle</h2>
-              <h3 className="text-left text-sm">Click on the step you'd like to explore</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+            <div>
+              <h3 className="text-lg font-bold">Explore by product lifecycle</h3>
+              <p>Click on the step you'd like to explore.</p>
               <LineCurve />
             </div>
-            <div className="flex-1 px-4">
-              <h2 className="text-lg font-bold text-left">Explore by ecosystem map</h2>
-              <h3 className="text-left text-sm mb-4">Click the ecosystem stage you'd like to explore</h3>
+            <div>
+              <h3 className="text-lg font-bold">Explore by ecosystem map</h3>
+              <p>Click the ecosystem stage you'd like to explore.</p>
               <FlowDiagram />
             </div>
           </div>
@@ -175,21 +172,22 @@ export const SearchPage: React.FC = () => {
       )}
 
       {data && (
-        <div className="flex mt-8">
+        <div className="flex flex-wrap mt-8">
           {data.internal_results.length > 0 || data.external_results.length > 0 ? (
-            <div className="w-1/4 pr-4">
+            <div className="w-full md:w-1/4 mb-4 md:mb-0 pr-4">
               <TagFilter
-                tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map(tag => tag.id))))
-                  .map(id => data.internal_results.flatMap((result) => result.tags).find(tag => tag.id === id)!)}
+                tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map((tag) => tag.id))))
+                  .map((id) =>
+                    data.internal_results.flatMap((result) => result.tags).find((tag) => tag.id === id)
+                  )}
                 selectedTags={selectedTags}
                 onTagChange={handleTagChange}
               />
             </div>
           ) : null}
-          <div className="w-3/4">
+          <div className="w-full md:w-3/4">
             {renderSearchResults(data.internal_results, 'Internal Library Results')}
             {renderSearchResults(data.external_results, 'External Research Results')}
-
             {!data.internal_results.length && !data.external_results.length && (
               <div className="text-center text-gray-600">
                 No results found for "{searchQuery}"

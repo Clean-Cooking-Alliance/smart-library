@@ -12,7 +12,7 @@ const MapChart = () => {
               geographies.map((geo) => (
                 <Geography style={{
                   default: {
-                    fill: "#EEE",
+                    fill: "blue",
                   },
                   hover: {
                     fill: "#91BAD6",
@@ -30,4 +30,4 @@ const MapChart = () => {
     );
   };
 
-    export default MapChart;
+export default MapChart;

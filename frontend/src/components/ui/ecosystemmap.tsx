@@ -3,20 +3,16 @@ import { ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 const FlowDiagram = () => {
-
-    const styles = {
-      width: '100%',
-      height: 100,
-    };
+    const styles = { width: '100%', height: '100%' };
     const initialNodes = [
-      { id: '1', position: { x: 0, y: 0 }, data: { label: 'Cultural Taboos and Practices' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '2', position: { x: 100, y: 100 }, data: { label: 'Purchasing Behavior' }, style: { borderRadius: '50%', width: 150, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '3', position: { x: 250, y: 100 }, data: { label: 'Cooking Habits' }, style: { borderRadius: '50%', width: 75, height: 75, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '4', position: { x: 200, y: 250 }, data: { label: 'Household Financial Management' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '5', position: { x: 325, y: 50 }, data: { label: 'Utilities Pricing Trends' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '6', position: { x: 375, y: 200 }, data: { label: 'Cookstove Usage Behaviour' }, style: { borderRadius: '50%', width: 150, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '7', position: { x: 450, y: 400 }, data: { label: 'Distribution and Availability' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
-      { id: '8', position: { x: 500, y: 100 }, data: { label: 'Cookstove Satisfaction' }, style: { borderRadius: '50%', width: 140, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+      { id: '1', position: { x: 0, y: 0 }, data: { label: 'Cultural Taboos and Practices' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '2', position: { x: 100, y: 100 }, data: { label: 'Purchasing Behavior' }, style: { borderRadius: '50%', width: 150, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '3', position: { x: 250, y: 100 }, data: { label: 'Cooking Habits' }, style: { borderRadius: '50%', width: 75, height: 75, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '4', position: { x: 200, y: 250 }, data: { label: 'Household Financial Management' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '5', position: { x: 325, y: 50 }, data: { label: 'Utilities Pricing Trends' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '6', position: { x: 375, y: 200 }, data: { label: 'Cookstove Usage Behaviour' }, style: { borderRadius: '50%', width: 150, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '7', position: { x: 450, y: 400 }, data: { label: 'Distribution and Availability' }, style: { borderRadius: '50%', width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
+      { id: '8', position: { x: 500, y: 100 }, data: { label: 'Cookstove Satisfaction' }, style: { borderRadius: '50%', width: 140, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid blue' } },
     ];
   
     const initialEdges = [
