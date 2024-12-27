@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookmarkIcon, PersonIcon } from '@radix-ui/react-icons';
+import { Bookmark, User } from 'lucide-react'
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,8 +35,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </TabsList>
           </Tabs>
           <div className="flex space-x-4 items-center">
-            <BookmarkIcon className="w-6 h-6 text-blue-600" />
-            <PersonIcon className="w-6 h-6 text-blue-600" />
+            <Bookmark className="w-6 h-6 text-blue-600 fill-current"/>
+            <User className="w-6 h-6 text-blue-600 fill-current" />
           </div>
         </div>
       </header>
