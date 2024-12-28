@@ -195,7 +195,7 @@ export const SearchPage: React.FC = () => {
                 tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map((tag) => tag.id))))
                   .map((id) =>
                     data.internal_results.flatMap((result) => result.tags).find((tag) => tag.id === id)
-                  )}
+                  ).filter((tag) => !isFrameworkQuery || tag?.name !== searchQuery)}
                 selectedTags={selectedTags}
                 onTagChange={handleTagChange}
               />
@@ -206,12 +206,12 @@ export const SearchPage: React.FC = () => {
               <>
                 <h2 className="text-xl font-bold mb-4">Documents with the tag: "{searchQuery}"</h2>
                 <hr className="mb-4" />
-              </>             
+              </>
             )}
-              {renderSearchResults(
-                isFrameworkQuery ? filterResultsByFramework(data.internal_results, searchQuery) : data.internal_results,
-                'Internal Library Results'
-              )}
+            {renderSearchResults(
+              isFrameworkQuery ? filterResultsByFramework(data.internal_results, searchQuery) : data.internal_results,
+              'Internal Library Results'
+            )}
             {renderSearchResults(
               isFrameworkQuery ? filterResultsByFramework(data.external_results, searchQuery) : data.external_results,
               'External Research Results'
