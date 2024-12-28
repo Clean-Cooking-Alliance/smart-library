@@ -5,7 +5,7 @@ import json
 import asyncio
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from openai import OpenAI
 import aiohttp
 from cachetools import TTLCache
@@ -54,6 +54,11 @@ class SearchService:
             embeddings = []
             ids = []
             for doc in documents:
+                # Regenerate embedding if needed
+                if not doc.embedding:
+                    doc.embedding = self._get_embedding(self._create_metadata_text(doc))
+                    db.add(doc)
+                    db.commit()
                 embeddings.append(doc.embedding)
                 ids.append(doc.id)
                 self.document_map[doc.id] = doc
@@ -86,8 +91,9 @@ class SearchService:
                 logger.info(f"Internal search found {len(internal_results)} results")
             except Exception as e:
                 logger.error(f"Internal search error: {str(e)}")
-                logger.error(traceback.format_exc())
                 internal_results = []
+                
+            urls = [result.source_url for result in internal_results]
 
             # External search
             external_results = []
@@ -97,7 +103,11 @@ class SearchService:
                     logger.info(f"External search found {len(external_results)} results")
                 except Exception as e:
                     logger.error(f"External search error: {str(e)}")
-                    logger.error(traceback.format_exc())
+            
+            # Remove duplicate results
+            for result in external_results:
+                if result.source_url in urls:
+                    external_results.remove(result)
 
             return CombinedSearchResponse(
                 internal_results=internal_results,
@@ -106,7 +116,6 @@ class SearchService:
 
         except Exception as e:
             logger.error(f"Search error: {str(e)}")
-            logger.error(traceback.format_exc())
             raise
 
     async def _search_internal(
@@ -267,6 +276,15 @@ class SearchService:
         except Exception as e:
             logger.error(f"Error getting embedding: {str(e)}")
             raise
+
+    def _create_metadata_text(self, document: Document) -> str:
+        """Create a text representation of document metadata for embedding."""
+        parts = [
+            f"Title: {document.title}",
+            f"Summary: {document.summary}" if document.summary else "",
+            f"Tags: {', '.join(tag.name for tag in document.tags)}" if document.tags else ""
+        ]
+        return " ".join(filter(None, parts))
 
     def _extract_json_from_markdown(self, content: str) -> str:
         """Extract JSON from markdown-formatted string."""

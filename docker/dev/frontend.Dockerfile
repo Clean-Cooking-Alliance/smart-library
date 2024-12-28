@@ -25,6 +25,7 @@ RUN npm install \
     @types/react \
     @types/react-dom \
     typescript \
+    react-simple-maps \
     xlsx
 
 # Copy the rest of the application code
