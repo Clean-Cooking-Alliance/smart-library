@@ -5,7 +5,7 @@ import json
 import asyncio
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from openai import OpenAI
 import aiohttp
 from cachetools import TTLCache
@@ -143,7 +143,9 @@ class SearchService:
                 if idx == -1:
                     continue
                 document_id = list(self.document_map.keys())[idx]
-                document = self.document_map[document_id]
+                document = db.query(Document).options(joinedload(Document.tags)).filter(Document.id == document_id).one_or_none()
+                if not document:
+                    continue
 
                 # Include tags in the document data
                 tags = [

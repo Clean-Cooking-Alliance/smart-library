@@ -24,14 +24,14 @@ interface BaseSearchResult {
   source_url: string;
   relevance_score: number;
   source: 'internal' | 'external';
+  tags: Tag[];
 }
 
 interface InternalSearchResult extends BaseSearchResult {
   document_id: number;
-  tags: Tag[];
 }
 
-interface ExternalSearchResult extends BaseSearchResult {}
+interface ExternalSearchResult extends BaseSearchResult { }
 
 interface CombinedSearchResponse {
   internal_results: InternalSearchResult[];
@@ -41,6 +41,7 @@ interface CombinedSearchResponse {
 export const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
+  const [isFrameworkQuery, setIsFrameworkQuery] = React.useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
@@ -61,6 +62,13 @@ export const SearchPage: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setSelectedTags([]);
+    setIsFrameworkQuery(false);
+  };
+
+  const handleFrameworkClick = (frameworkName: string) => {
+    setSearchQuery(frameworkName);
+    setIsFrameworkQuery(true);
   };
 
   const handleTagChange = (tagId: number) => {
@@ -76,6 +84,14 @@ export const SearchPage: React.FC = () => {
     return results.filter((result) =>
       'tags' in result
         ? (result as InternalSearchResult).tags.some((tag) => selectedTags.includes(tag.id!))
+        : false
+    );
+  };
+
+  const filterResultsByFramework = (results: BaseSearchResult[], frameworkName: string) => {
+    return results.filter((result) =>
+      'tags' in result
+        ? (result as InternalSearchResult).tags.some((tag) => tag.name === frameworkName)
         : false
     );
   };
@@ -148,24 +164,24 @@ export const SearchPage: React.FC = () => {
             <div>
               <h3 className="text-lg font-bold">Explore by region</h3>
               <p>Click on a region or country to explore relevant literature.</p>
-              <MapChart />
+              <MapChart setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
             <div>
               <h3 className="text-lg font-bold">Explore by customer lifecycle</h3>
               <p>Click the customer lifecycle step you'd like to explore.</p>
-              <Diagram />
+              <Diagram setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
             <div>
               <h3 className="text-lg font-bold">Explore by product lifecycle</h3>
               <p>Click on the step you'd like to explore.</p>
-              <LineCurve />
+              <LineCurve setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
             <div>
               <h3 className="text-lg font-bold">Explore by ecosystem map</h3>
               <p>Click the ecosystem stage you'd like to explore.</p>
-              <FlowDiagram />
+              <FlowDiagram setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
           </div>
         </div>
@@ -186,8 +202,20 @@ export const SearchPage: React.FC = () => {
             </div>
           ) : null}
           <div className="w-full md:w-3/4">
-            {renderSearchResults(data.internal_results, 'Internal Library Results')}
-            {renderSearchResults(data.external_results, 'External Research Results')}
+            {isFrameworkQuery && (
+              <>
+                <h2 className="text-xl font-bold mb-4">Documents with the tag: "{searchQuery}"</h2>
+                <hr className="mb-4" />
+              </>             
+            )}
+              {renderSearchResults(
+                isFrameworkQuery ? filterResultsByFramework(data.internal_results, searchQuery) : data.internal_results,
+                'Internal Library Results'
+              )}
+            {renderSearchResults(
+              isFrameworkQuery ? filterResultsByFramework(data.external_results, searchQuery) : data.external_results,
+              'External Research Results'
+            )}
             {!data.internal_results.length && !data.external_results.length && (
               <div className="text-center text-gray-600">
                 No results found for "{searchQuery}"

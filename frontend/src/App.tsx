@@ -9,10 +9,13 @@ import { Layout } from './components/layout/Layout';
 const queryClient = new QueryClient();
 
 function App() {
+  const resetSearch = () => {
+    queryClient.invalidateQueries('search');
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Layout>
+        <Layout resetSearch={resetSearch}>
           <Routes>
             <Route path="/" element={<SearchPage />} />
             <Route path="/explore" element={<ExplorePage />} />

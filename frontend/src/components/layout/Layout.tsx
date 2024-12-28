@@ -2,23 +2,25 @@ import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Bookmark, User } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 interface LayoutProps {
   children: React.ReactNode;
+  resetSearch: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
+export const Layout: React.FC<LayoutProps> = ({ children, resetSearch }) => {
+  // const navigate = useNavigate();
+  // const location = useLocation();
 
   return (
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto py-6 flex items-center justify-around">
-          <h1 className="text-3xl font-bold text-gray-900">Clean Cooking Smart Library</h1>
+        <div className="max-w-7xl mx-auto py-6 flex items-center justify-between">
+          <Link className="text-3xl font-bold text-gray-900" to="/" onClick={resetSearch}>Clean Cooking Smart Library</Link>
           {/* Navigation */}
-          <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-half max-w-md">
+          {/* <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-half max-w-md">
             <TabsList className="flex">
               <TabsTrigger
                 value="search"
@@ -33,7 +35,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Explore
               </TabsTrigger>
             </TabsList>
-          </Tabs>
+          </Tabs> */}
           <div className="flex space-x-4 items-center">
             <Bookmark className="w-6 h-6 text-blue-600 fill-current"/>
             <User className="w-6 h-6 text-blue-600 fill-current" />
