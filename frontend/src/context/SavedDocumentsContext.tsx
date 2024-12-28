@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Document } from '../types';
 
 interface SavedDocumentsContextProps {
@@ -11,8 +11,17 @@ const SavedDocumentsContext = createContext<SavedDocumentsContextProps | undefin
 export const SavedDocumentsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [savedDocuments, setSavedDocuments] = useState<Document[]>([]);
 
+  useEffect(() => {
+    const savedDocs = localStorage.getItem('savedDocuments');
+    if (savedDocs) {
+      setSavedDocuments(JSON.parse(savedDocs));
+    }
+  }, []);
+
   const saveDocument = (document: Document) => {
-    setSavedDocuments((prev) => [...prev, document]);
+    const updatedDocuments = [...savedDocuments, document];
+    setSavedDocuments(updatedDocuments);
+    localStorage.setItem('savedDocuments', JSON.stringify(updatedDocuments));
   };
 
   return (
