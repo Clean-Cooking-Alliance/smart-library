@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:14-alpine
+    image: ankane/pgvector:latest
     ports:
       - "5432:5432"
     environment:
@@ -11,6 +11,7 @@ services:
       - POSTGRES_DB=cleandb
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-vector-extension.sql:/docker-entrypoint-initdb.d/init-vector-extension.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d cleandb"]
       interval: 5s

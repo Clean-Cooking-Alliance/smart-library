@@ -7,6 +7,7 @@ Create Date: 2023-11-18 00:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+from pgvector.sqlalchemy import Vector
 
 # revision identifiers, used by Alembic.
 revision = 'add_embedding_column'
@@ -16,7 +17,7 @@ depends_on = None
 
 def upgrade() -> None:
     # Add embedding column to document table
-    op.add_column('document', sa.Column('embedding', sa.ARRAY(sa.Float()), nullable=True))
+    op.add_column('document', sa.Column('embedding', Vector(384), nullable=True))
 
 def downgrade() -> None:
     # Remove embedding column from document table

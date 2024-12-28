@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, Float, ForeignKey, Table
 from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
 from datetime import datetime
 from app.db.base_class import Base
 
@@ -22,7 +23,7 @@ class Document(Base):
     year_published = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    embedding = Column(ARRAY(Float), nullable=True)  # Added this line
+    embedding = Column(Vector, nullable=True)  # Added this line
     
     # Relationships
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")

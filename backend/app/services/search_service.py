@@ -12,6 +12,7 @@ from cachetools import TTLCache
 import numpy as np
 import faiss
 import traceback
+from sentence_transformers import SentenceTransformer
 
 from app.core.config import settings
 from app.models.document import Document
@@ -22,6 +23,8 @@ from app.schemas.search import (
     Tag,
     TagCategory
 )
+from ..crud import crud_document
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -124,30 +127,11 @@ class SearchService:
         """Search internal database using FAISS with tags included."""
         try:
             logger.info("Starting internal search")
-            if self.index is None:
-                logger.info("FAISS index not initialized. Initializing now.")
-                self.initialize_faiss_index(db)
 
             query_embedding = self._get_embedding(query)
-
-            if self.index is None or self.index.ntotal == 0:
-                logger.warning("FAISS index is empty or uninitialized.")
-                return []
-
-            # Search FAISS index
-            distances, indices = self.index.search(np.array([query_embedding], dtype=np.float32), limit)
-            logger.info(f"FAISS search returned {len(indices[0])} results")
-
+            query_results =  crud_document.document.get_by_text_embedding(db, query_embedding=query_embedding, limit=limit)
             scored_documents = []
-            for i, idx in enumerate(indices[0]):
-                if idx == -1:
-                    continue
-                document_id = list(self.document_map.keys())[idx]
-                document = db.query(Document).options(joinedload(Document.tags)).filter(Document.id == document_id).one_or_none()
-                if not document:
-                    continue
-
-                # Include tags in the document data
+            for (document, relevance_score) in query_results:
                 tags = [
                     Tag(
                         id=tag.id,
@@ -155,13 +139,12 @@ class SearchService:
                         category=TagCategory(tag.category.value if tag.category else "unknown")
                     ) for tag in document.tags
                 ]
-
                 scored_documents.append(SearchResult(
                     document_id=document.id,
                     title=document.title,
                     summary=document.summary or "",
                     source_url=document.source_url,
-                    relevance_score=float(1 - distances[0][i]),  # Convert distance to similarity
+                    relevance_score=float(f"{1-relevance_score:.2f}"),  # Convert distance to similarity
                     tags=tags,
                     source="internal"
                 ))
@@ -286,11 +269,10 @@ class SearchService:
     def _get_embedding(self, text: str) -> List[float]:
         """Get embedding for text using OpenAI."""
         try:
-            response = self.client.embeddings.create(
-                input=text,
-                model="text-embedding-ada-002"
-            )
-            return response.data[0].embedding
+            model = SentenceTransformer('thenlper/gte-small')
+            embedding =  model.encode(text)
+            embedding_list = [float(value) for value in embedding] 
+            return embedding_list
         except Exception as e:
             logger.error(f"Error getting embedding: {str(e)}")
             raise

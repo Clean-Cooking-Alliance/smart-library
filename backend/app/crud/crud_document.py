@@ -7,6 +7,8 @@ from app.models.document import Document
 from app.models.tag import Tag, TagCategory
 from app.schemas.document import DocumentCreate, DocumentUpdate
 from app.services.search_service import search_service 
+from sqlalchemy.sql import func
+from sqlalchemy.sql import text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -204,5 +206,30 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         ).distinct()
         
         return query.offset(skip).limit(limit).all()
+    
+    def get_by_text_embedding(
+        self,
+        db: Session,
+        *,
+        query_embedding,
+        skip: int = 0,
+        limit: int = 10,
+
+    ):
+        query = (
+            db.query(
+                self.model,
+                func.cosine_distance(self.model.embedding, text(f"'{query_embedding}'::vector")).label('relevance_score')
+            )
+            .join(Document.tags)
+            .order_by(
+                func.cosine_distance(self.model.embedding, text(f"'{query_embedding}'::vector"))
+            )
+            .offset(skip)
+            .limit(limit)
+        )
+
+        results = query.all()
+        return results
 
 document = CRUDDocument(Document)
