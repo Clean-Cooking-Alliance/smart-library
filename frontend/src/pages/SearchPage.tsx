@@ -9,6 +9,8 @@ import MapChart from '@/components/ui/mapchart';
 import Diagram from '@/components/ui/customerlifecycleflow';
 import FlowDiagram from '@/components/ui/ecosystemmap';
 import LineCurve from '@/components/ui/productlifecycleline';
+import { useSavedDocuments } from '../context/SavedDocumentsContext';
+import { Bookmark } from 'lucide-react'
 
 import '@xyflow/react/dist/style.css';
 
@@ -98,14 +100,25 @@ export const SearchPage: React.FC = () => {
 
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
     const filteredResults = filterResultsByTags(results);
+    const { saveDocument, savedDocuments } = useSavedDocuments();
     if (!filteredResults.length) return null;
 
+    const isDocumentSaved = (documentId: number) => {
+      return savedDocuments.some((doc) => doc.document_id === documentId);
+    };
+  
     return (
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
         <div className="space-y-4">
           {filteredResults.map((result, index) => (
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+              <div className="flex justify-end">
+                <Bookmark
+                  className={`w-6 h-6 text-blue-600 cursor-pointer hover:fill-blue-600 ${isDocumentSaved(result.document_id) ? 'fill-blue-600' : ''}`}
+                  onClick={() => saveDocument(result)}
+                />
+              </div>
               <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
               <CollapsibleSummary summary={result.summary} />
               {'tags' in result && (

@@ -3,6 +3,7 @@ import { SearchResult } from '../../types';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ExternalLink } from 'lucide-react';
+import { useSavedDocuments } from '../../context/SavedDocumentsContext';
 
 interface SearchResultsProps {
     results: SearchResult[];
@@ -10,6 +11,8 @@ interface SearchResultsProps {
 }
 
 export const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading }) => {
+    const { saveDocument } = useSavedDocuments();
+
     if (isLoading) {
         return <div className="text-center py-8">Searching...</div>;
     }
@@ -44,6 +47,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results, isLoading
                                 </Badge>
                             ))}
                         </div>
+                        <button
+                            onClick={() => saveDocument(result)}
+                            className="mt-4 text-blue-600 hover:underline"
+                        >
+                            Save Document
+                        </button>
                     </CardContent>
                 </Card>
             ))}
