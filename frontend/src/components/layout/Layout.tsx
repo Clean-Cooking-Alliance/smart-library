@@ -18,8 +18,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, resetSearch }) => {
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto py-6 flex items-center justify-between">
-          <Link className="text-3xl font-bold text-gray-900" to="/" onClick={resetSearch}>Clean Cooking Smart Library</Link>
-          {/* Navigation */}
+        <a className="text-3xl font-bold text-gray-900" href="/" onClick={resetSearch}>
+          Clean Cooking Smart Library
+        </a>          
+    {/* Navigation */}
           {/* <Tabs defaultValue={location.pathname === '/' ? 'search' : 'explore'} className="w-half max-w-md">
             <TabsList className="flex">
               <TabsTrigger
