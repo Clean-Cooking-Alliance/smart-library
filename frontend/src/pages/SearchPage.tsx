@@ -113,13 +113,13 @@ export const SearchPage: React.FC = () => {
         <div className="space-y-4">
           {filteredResults.map((result, index) => (
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+              <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
                 <Bookmark
                   className={`w-6 h-6 text-#042449 cursor-pointer hover:fill-[#042449] ${isDocumentSaved(result.document_id) ? 'fill-[#042449]' : ''}`}
                   onClick={() => saveDocument(result)}
                 />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
               <CollapsibleSummary summary={result.summary} />
               {'tags' in result && (
                 <div className="flex flex-wrap gap-2 mb-3">
