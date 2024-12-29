@@ -17,6 +17,7 @@ export const ProfilePage: React.FC = () => {
     tags: '',
   });
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadStatusFile, setUploadStatusFile] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -27,7 +28,6 @@ export const ProfilePage: React.FC = () => {
     e.preventDefault();
     setUploadStatus(null);
 
-    // Parse tags into a structured format
     const tags = formData.tags.split(',').map((tag) => {
       const [name, category] = tag.split(':').map((str) => str.trim());
       return { name, category };
@@ -113,9 +113,14 @@ export const ProfilePage: React.FC = () => {
         'Content-Type': 'application/json'
       };
 
-      for (const payload of jsonPayloads) {
-        const response = await axios.post(url, payload, { headers });
-        console.log(`Status: ${response.status}, Response: ${response.data}`);
+      try {
+        for (const payload of jsonPayloads) {
+          await axios.post(url, payload, { headers });
+        }
+        setUploadStatusFile(`${file.name} imported successfully.`);
+      } catch (error) {
+        console.error(error);
+        setUploadStatusFile(`Failed to import file. Please try again.`);
       }
     };
 
@@ -134,8 +139,23 @@ export const ProfilePage: React.FC = () => {
       <h1 className="text-2xl font-bold mt-6 mb-6">Add New Document(s)</h1>
       <h2 className="text-xl font-bold mt-6 mb-4">Import From an Excel File</h2>
       <div className="mb-6">
-        <input type="file" accept=".xlsx" onChange={handleFileChange} className="ml-auto" />
+        <input
+          type="file"
+          accept=".xlsx"
+          onChange={handleFileChange}
+          id="file-input"
+          className="hidden"
+        />
+        <label htmlFor="file-input" className="ml-auto bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43] cursor-pointer">
+          Choose File
+        </label>
+        {/* <input type="file" accept=".xlsx" onChange={handleFileChange} className="ml-auto bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43]" /> */}
       </div>
+      {uploadStatusFile && (
+        <div className={`mt-4 text-sm ${uploadStatusFile.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+          {uploadStatusFile}
+        </div>
+      )}
       <h2 className="text-xl font-bold mt-6 mb-4">Add a New Document Manually</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -257,8 +277,8 @@ export const ProfilePage: React.FC = () => {
         )}
       </div> */}
       {/* <div> */}
-        {/* <h2 className="text-xl font-bold mb-4">Settings</h2> */}
-        {/* <button className="bg-blue-500 text-white px-4 py-2 rounded">Update Profile</button> */}
+      {/* <h2 className="text-xl font-bold mb-4">Settings</h2> */}
+      {/* <button className="bg-blue-500 text-white px-4 py-2 rounded">Update Profile</button> */}
       {/* </div> */}
     </div>
   );
