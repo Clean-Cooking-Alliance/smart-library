@@ -1,5 +1,8 @@
 import React from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { Tooltip } from 'react-tooltip'
+
+import 'react-tooltip/dist/react-tooltip.css'
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -31,6 +34,14 @@ const MapChart: React.FC<MapChartProps> = ({ setSearchQuery }) => {
 
   return (
     <div style={{ width: "100%", height: "auto" }}>
+      <Tooltip id="country" place="top"
+        render={({ content }) => (
+          <span>
+            {content}
+            <br />
+          </span>
+        )}
+      />
       <ComposableMap>
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
@@ -39,6 +50,8 @@ const MapChart: React.FC<MapChartProps> = ({ setSearchQuery }) => {
                 key={geo.rsmKey}
                 geography={geo}
                 onClick={() => handleCountryClick(geo)}
+                data-tooltip-content={geo.properties["name"]}
+                data-tooltip-id="country"
                 style={{
                   default: {
                     fill: "blue",
