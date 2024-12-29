@@ -50,7 +50,7 @@ const FlowDiagram: React.FC<EcosystemMapProps> = ({ setSearchQuery }) => {
       { id: 'e6-8', source: '6', target: '8' },
       { id: 'e7-8', source: '7', target: '8' },
     ];
-    return (<div style={{ width: '40vw', height: '50vh' }}> <ReactFlow nodes={initialNodes} edges={initialEdges} style={styles} zoomOnScroll={false}
+    return (<div style={{ width: '90vw', height: '50vh' }}> <ReactFlow nodes={initialNodes} edges={initialEdges} style={styles} zoomOnScroll={false}
       zoomOnPinch={false}
       zoomOnDoubleClick={false}
       panOnScroll={false} // Optional: Allows panning

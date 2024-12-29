@@ -65,7 +65,7 @@ const LineCurve: React.FC<ProductLifecycleProps> = ({ setSearchQuery }) => {
         <text x="240" y="50" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Maturity")}>
           Maturity
         </text>
-        <text x="345" y="120" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Decline")}>
+        <text x="343" y="120" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Decline")}>
           Decline
         </text>
       </svg>
