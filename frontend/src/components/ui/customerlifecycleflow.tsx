@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Tag {
   id?: number;
@@ -21,9 +21,10 @@ interface CustomerLifecycleFlowProps {
 }
 
 const Diagram: React.FC<CustomerLifecycleFlowProps> = ({ setSearchQuery }) => {
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
   const handleStepClick = (stepName: string) => {
-    const step = stepName;
-    setSearchQuery(step);
+    setSearchQuery(stepName);
   };
 
   const steps = [
@@ -40,9 +41,22 @@ const Diagram: React.FC<CustomerLifecycleFlowProps> = ({ setSearchQuery }) => {
       {steps.map((step, index) => (
         <div key={index} className="flex items-center">
           <div className="flex flex-col items-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-20 md:h-20 lg:w-20 lg:h-20 xl:w-20 xl:h-20 rounded-full flex flex-col items-center justify-center shadow-md border-2 border-[#042449] cursor-pointer" onClick={() => handleStepClick(step.title)}>
-              <h3 className="text-center text-[8px] sm:text-[8px] md:text-[8px] lg:text-[8px] xl:text-[8px] font-semibold">{step.title}</h3>
-              <p className="text-center text-[6px] sm:text-[6px] md:text-[6px] lg:text-[6px] xl:text-[6px]">{step.description}</p>
+            <div
+              className="w-16 h-16 sm:w-20 sm:h-20 md:w-20 md:h-20 lg:w-20 lg:h-20 xl:w-20 xl:h-20 rounded-full flex flex-col items-center justify-center shadow-md border-2 cursor-pointer"
+              style={{
+                borderColor: "#042449",
+                backgroundColor: hoveredNode === step.title ? 'rgba(86, 141, 67, 0.5)' : '#ffffff'
+              }}
+              onClick={() => handleStepClick(step.title)}
+              onMouseEnter={() => setHoveredNode(step.title)}
+              onMouseLeave={() => setHoveredNode(null)}
+            >
+              <h3 className="text-center text-[8px] sm:text-[8px] md:text-[8px] lg:text-[8px] xl:text-[8px] font-semibold">
+                {step.title}
+              </h3>
+              <p className="text-center text-[6px] sm:text-[6px] md:text-[6px] lg:text-[6px] xl:text-[6px]">
+                {step.description}
+              </p>
             </div>
           </div>
 

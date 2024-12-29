@@ -57,7 +57,7 @@ const MapChart: React.FC<MapChartProps> = ({ setSearchQuery }) => {
                     fill: "#042449",
                   },
                   hover: {
-                    fill: "#568d43",
+                    fill: "rgba(86, 141, 67, 0.5)",
                   },
                   // pressed: {
                   //   fill: "#1E3f66",
