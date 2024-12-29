@@ -181,19 +181,19 @@ export const SearchPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-lg font-bold">Explore by customer lifecycle</h3>
-              <p>Click the customer lifecycle step you'd like to explore.</p>
+              <p className="mb-6">Click the customer lifecycle step you'd like to explore.</p>
               <Diagram setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
             <div>
               <h3 className="text-lg font-bold">Explore by product lifecycle</h3>
-              <p>Click on the step you'd like to explore.</p>
+              <p className="mb-6">Click on the step you'd like to explore.</p>
               <LineCurve setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
             <div>
               <h3 className="text-lg font-bold">Explore by ecosystem map</h3>
-              <p>Click the ecosystem stage you'd like to explore.</p>
+              <p className="mb-6">Click the ecosystem stage you'd like to explore.</p>
               <FlowDiagram setSearchQuery={handleFrameworkClick} results={[]} />
             </div>
           </div>
