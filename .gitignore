@@ -61,3 +61,4 @@ coverage/
 .env
 .env.*
 docker-compose.yml
+todo.md

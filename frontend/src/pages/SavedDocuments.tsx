@@ -3,6 +3,7 @@ import { useSavedDocuments } from '../context/SavedDocumentsContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
+import CollapsibleSummary from '../components/ui/collapsiblesummary';
 
 export const SavedDocuments: React.FC = () => {
   const { savedDocuments } = useSavedDocuments();
@@ -33,7 +34,7 @@ export const SavedDocuments: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-4">{document.summary}</p>
+                <CollapsibleSummary summary={document.summary} />
                 <div className="flex flex-wrap gap-2">
                   {document.tags.map((tag) => (
                     <Badge key={tag.id} variant={tag.category}>

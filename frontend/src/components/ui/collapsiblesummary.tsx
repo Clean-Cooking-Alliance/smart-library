@@ -33,7 +33,9 @@ const CollapsibleSummary: React.FC<CollapsibleSummaryProps> = ({ summary }) => {
         onClick={toggleCollapse}
         className="text-blue-600 hover:text-blue-800 hover:underline mb-6"
       >
-        {isCollapsed ? 'Read more' : 'Read less'}
+        {isSliced &&
+          (isCollapsed ? 'Show more' : 'Show less')
+        }
       </button>
     </div>
   );
