@@ -26,7 +26,9 @@ RUN npm install \
     @types/react-dom \
     typescript \
     react-simple-maps \
-    xlsx
+    xlsx \
+    @xyflow/react \
+    react-tooltip
 
 # Copy the rest of the application code
 COPY . .
