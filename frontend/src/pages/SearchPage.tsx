@@ -49,15 +49,23 @@ export const SearchPage: React.FC = () => {
     queryKey: ['search', searchQuery],
     queryFn: async () => {
       if (!searchQuery) return null;
-      const response = await axios.post<CombinedSearchResponse>(
-        'http://localhost:8000/api/v1/search/',
-        {
-          query: searchQuery,
-          limit: 10,
-          include_external: true,
-        }
-      );
-      return response.data;
+      if (!isFrameworkQuery) {
+        const response = await axios.post<CombinedSearchResponse>(
+          'http://localhost:8000/api/v1/search/',
+          {
+            query: searchQuery,
+            limit: 10,
+            include_external: true,
+          }
+        );
+        return response.data;
+      }
+      else {
+        const response = await axios.get<InternalSearchResult[]>(
+          'http://localhost:8000/api/v1/documents/'
+        );
+        return { internal_results: response.data, external_results: [] };
+      }
     },
     enabled: !!searchQuery,
   });
@@ -143,9 +151,11 @@ export const SearchPage: React.FC = () => {
                 >
                   View Source →
                 </a>
-                <span className="text-sm text-gray-500">
+                {!isFrameworkQuery && (
+                  <span className="text-sm text-gray-500">
                   Relevance: {(result.relevance_score * 100).toFixed(0)}%
                 </span>
+                )}
               </div>
             </div>
           ))}

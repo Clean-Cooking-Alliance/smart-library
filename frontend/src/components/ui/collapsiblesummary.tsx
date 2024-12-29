@@ -8,28 +8,30 @@ const CollapsibleSummary: React.FC<CollapsibleSummaryProps> = ({ summary }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const previewLimit = 550;
 
-  const getPreviewText = (text: string, limit: number) => {
-    if (text.length <= limit) return text;
+  const getPreviewText = (text: string, limit: number): [string, boolean] => {
+    if (text.length <= limit) return [text, false];
     const preview = text.slice(0, limit);
     const lastPeriodIndex = preview.lastIndexOf('.');
     if (lastPeriodIndex !== -1) {
-      return preview.slice(0, lastPeriodIndex + 1);
+      return [preview.slice(0, lastPeriodIndex + 1), true];
     }
-    return preview;
+    return [preview, true];
   };
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
+  const [previewText, isSliced] = getPreviewText(summary, previewLimit);
+
   return (
     <div>
-      <p className="text-gray-600 mb-3">
-        {isCollapsed ? `${getPreviewText(summary, previewLimit)}...` : summary}
+      <p className="text-gray-600">
+        {isCollapsed ? `${previewText}${isSliced ? '...' : ''}` : summary}
       </p>
       <button
         onClick={toggleCollapse}
-        className="text-blue-600 hover:text-blue-800 hover:underline"
+        className="text-blue-600 hover:text-blue-800 hover:underline mb-6"
       >
         {isCollapsed ? 'Read more' : 'Read less'}
       </button>
