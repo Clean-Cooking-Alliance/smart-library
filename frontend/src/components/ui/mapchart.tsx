@@ -54,14 +54,14 @@ const MapChart: React.FC<MapChartProps> = ({ setSearchQuery }) => {
                 data-tooltip-id="country"
                 style={{
                   default: {
-                    fill: "blue",
+                    fill: "#042449",
                   },
                   hover: {
-                    fill: "#91BAD6",
+                    fill: "#568d43",
                   },
-                  pressed: {
-                    fill: "#1E3f66",
-                  },
+                  // pressed: {
+                  //   fill: "#1E3f66",
+                  // },
                 }}
               />
             ))
