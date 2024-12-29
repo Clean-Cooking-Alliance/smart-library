@@ -106,7 +106,7 @@ export const SearchPage: React.FC = () => {
     const isDocumentSaved = (documentId: number) => {
       return savedDocuments.some((doc) => doc.document_id === documentId);
     };
-  
+
     return (
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
@@ -202,8 +202,8 @@ export const SearchPage: React.FC = () => {
 
       {data && (
         <div className="flex flex-wrap mt-8">
-          {data.internal_results.length > 0 || data.external_results.length > 0 ? (
-            <div className="w-full md:w-1/4 mb-4 md:mb-0 pr-4">
+          <div className="w-full md:w-1/4 mb-4 md:mb-0 pr-4">
+            {data.internal_results.length > 0 || data.external_results.length > 0 ? (
               <TagFilter
                 tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map((tag) => tag.id))))
                   .map((id) =>
@@ -212,8 +212,12 @@ export const SearchPage: React.FC = () => {
                 selectedTags={selectedTags}
                 onTagChange={handleTagChange}
               />
-            </div>
-          ) : null}
+            ) : (
+              <div className="p-4 border rounded-lg bg-white shadow-sm">
+                <h2 className="text-xl font-bold mb-4 py-6">No tags available</h2>
+              </div>
+            )}
+          </div>
           <div className="w-full md:w-3/4">
             {isFrameworkQuery && (
               <>
