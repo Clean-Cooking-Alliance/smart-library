@@ -49,15 +49,23 @@ export const SearchPage: React.FC = () => {
     queryKey: ['search', searchQuery],
     queryFn: async () => {
       if (!searchQuery) return null;
-      const response = await axios.post<CombinedSearchResponse>(
-        'http://localhost:8000/api/v1/search/',
-        {
-          query: searchQuery,
-          limit: 10,
-          include_external: true,
-        }
-      );
-      return response.data;
+      if (!isFrameworkQuery) {
+        const response = await axios.post<CombinedSearchResponse>(
+          'http://localhost:8000/api/v1/search/',
+          {
+            query: searchQuery,
+            limit: 10,
+            include_external: true,
+          }
+        );
+        return response.data;
+      }
+      else {
+        const response = await axios.get<InternalSearchResult[]>(
+          'http://localhost:8000/api/v1/documents/'
+        );
+        return { internal_results: response.data, external_results: [] };
+      }
     },
     enabled: !!searchQuery,
   });
@@ -113,13 +121,13 @@ export const SearchPage: React.FC = () => {
         <div className="space-y-4">
           {filteredResults.map((result, index) => (
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-              <div className="flex justify-end">
+              <div className="flex justify-between">
+              <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
                 <Bookmark
                   className={`w-6 h-6 text-#042449 cursor-pointer hover:fill-[#042449] ${isDocumentSaved(result.document_id) ? 'fill-[#042449]' : ''}`}
                   onClick={() => saveDocument(result)}
                 />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
               <CollapsibleSummary summary={result.summary} />
               {'tags' in result && (
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -143,9 +151,11 @@ export const SearchPage: React.FC = () => {
                 >
                   View Source →
                 </a>
-                <span className="text-sm text-gray-500">
+                {!isFrameworkQuery && (
+                  <span className="text-sm text-gray-500">
                   Relevance: {(result.relevance_score * 100).toFixed(0)}%
                 </span>
+                )}
               </div>
             </div>
           ))}
