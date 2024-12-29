@@ -1,5 +1,5 @@
 // frontend/src/pages/ProfilePage.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useSavedDocuments } from '../context/SavedDocumentsContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -9,6 +9,54 @@ import axios from 'axios';
 
 
 export const ProfilePage: React.FC = () => {
+  const [formData, setFormData] = useState({
+    title: '',
+    summary: '',
+    source_url: '',
+    year_published: '',
+    tags: '',
+  });
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadStatus(null);
+
+    // Parse tags into a structured format
+    const tags = formData.tags.split(',').map((tag) => {
+      const [name, category] = tag.split(':').map((str) => str.trim());
+      return { name, category };
+    });
+
+    const payload = {
+      ...formData,
+      year_published: parseInt(formData.year_published, 10),
+      tags,
+    };
+
+    try {
+      const response = await axios.post('http://localhost:8000/api/v1/documents/', payload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      setUploadStatus(`Document added successfully: ${response.data.id}`);
+      setFormData({
+        title: '',
+        summary: '',
+        source_url: '',
+        year_published: '',
+        tags: '',
+      });
+    } catch (error) {
+      console.error(error);
+      setUploadStatus('Failed to add document. Please try again.');
+    }
+  }
+
   const { savedDocuments } = useSavedDocuments();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,10 +131,94 @@ export const ProfilePage: React.FC = () => {
         <p className="text-gray-600">john.doe@example.com</p>
       </div>
       <hr></hr>
-      <h1 className="text-2xl font-bold mt-6 mb-6">Import data from an Excel file</h1>
+      <h1 className="text-2xl font-bold mt-6 mb-6">Add New Document(s)</h1>
+      <h2 className="text-xl font-bold mt-6 mb-4">Import From an Excel File</h2>
       <div className="mb-6">
         <input type="file" accept=".xlsx" onChange={handleFileChange} className="ml-auto" />
       </div>
+      <h2 className="text-xl font-bold mt-6 mb-4">Add a New Document Manually</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium">
+            Title
+          </label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="summary" className="block text-sm font-medium">
+            Summary
+          </label>
+          <textarea
+            id="summary"
+            name="summary"
+            value={formData.summary}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            rows={3}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="source_url" className="block text-sm font-medium">
+            Source URL
+          </label>
+          <input
+            type="url"
+            id="source_url"
+            name="source_url"
+            value={formData.source_url}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="year_published" className="block text-sm font-medium">
+            Year Published
+          </label>
+          <input
+            type="number"
+            id="year_published"
+            name="year_published"
+            value={formData.year_published}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="tags" className="block text-sm font-medium">
+            Tags (Format: name:category, separate multiple tags with commas)
+          </label>
+          <input
+            type="text"
+            id="tags"
+            name="tags"
+            value={formData.tags}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          />
+        </div>
+        <button
+          type="submit"
+          className="bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43]"
+        >
+          Add Document
+        </button>
+      </form>
+      {uploadStatus && (
+        <div className={`mt-4 text-sm ${uploadStatus.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+          {uploadStatus}
+        </div>
+      )}
       {/* <hr></hr>
       <div className="mt-6">
         <h2 className="text-xl font-bold mb-4">Saved Documents</h2>
