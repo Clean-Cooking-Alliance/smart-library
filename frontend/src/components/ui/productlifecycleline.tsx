@@ -56,16 +56,16 @@ const LineCurve: React.FC<ProductLifecycleProps> = ({ setSearchQuery }) => {
         <rect x="230" y="10" width="110" height="140" fill="transparent" onMouseEnter={(e) => { e.currentTarget.style.fill = 'rgba(86, 141, 67, 0.5)'; e.currentTarget.style.cursor = 'pointer'; }} onMouseLeave={(e) => e.currentTarget.style.fill = 'transparent'} onClick={() => handleStepClick("Maturity")}/>
         <rect x="340" y="10" width="50" height="140" fill="transparent" onMouseEnter={(e) => { e.currentTarget.style.fill = 'rgba(86, 141, 67, 0.5)'; e.currentTarget.style.cursor = 'pointer'; }} onMouseLeave={(e) => e.currentTarget.style.fill = 'transparent'} onClick={() => handleStepClick("Decline")}/>
 
-        <text x="65" y="150" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Introduction")}>
+        <text x="65" y="150" fill="black" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Introduction")}>
           Introduction
         </text>
-        <text x="160" y="40" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Growth")}>
+        <text x="160" y="40" fill="black" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Growth")}>
           Growth
         </text>
-        <text x="240" y="50" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Maturity")}>
+        <text x="240" y="50" fill="black" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Maturity")}>
           Maturity
         </text>
-        <text x="343" y="120" fill="#042449" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Decline")}>
+        <text x="343" y="120" fill="black" fontSize="12" fontWeight="bold" onClick={() => handleStepClick("Decline")}>
           Decline
         </text>
       </svg>
