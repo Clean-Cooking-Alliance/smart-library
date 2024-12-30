@@ -6,14 +6,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=riagupta
+      - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=cleandb
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init-vector-extension.sql:/docker-entrypoint-initdb.d/init-vector-extension.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U riagupta -d cleandb"]
+      test: ["CMD-SHELL", "pg_isready -U user -d cleandb"]
       interval: 5s
       timeout: 5s
       retries: 5
