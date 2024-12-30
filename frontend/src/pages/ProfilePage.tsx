@@ -7,6 +7,27 @@ import * as XLSX from 'xlsx';
 import axios from 'axios';
 
 export const ProfilePage: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Predefined username and password (for demonstration purposes)
+  const correctCredentials = {
+    username: "admin",
+    password: "secret123",
+  };
+
+  // Handle login form submission
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (username === correctCredentials.username && password === correctCredentials.password) {
+      setIsAuthenticated(true);
+    } else {
+      alert("Incorrect username or password");
+    }
+  };
+
+  
   const [formData, setFormData] = useState({
     title: '',
     summary: '',
@@ -14,6 +35,8 @@ export const ProfilePage: React.FC = () => {
     year_published: '',
     tags: '',
   });
+
+  
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadStatusFile, setUploadStatusFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -129,6 +152,87 @@ export const ProfilePage: React.FC = () => {
     reader.readAsArrayBuffer(file);
   };
 
+  // Render the login form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          backgroundColor: "#f0f4f8",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "8px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            padding: "20px",
+            width: "300px",
+            textAlign: "center",
+          }}
+        >
+          <h2
+            style={{
+              margin: "0 0 20px",
+              fontSize: "20px",
+              color: "#333",
+            }}
+          >
+            Login to Access This Page
+          </h2>
+          <form onSubmit={handleLoginSubmit}>
+            <input
+              type="text"
+              placeholder="Enter username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                margin: "10px 0",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                margin: "10px 0",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                backgroundColor: "#007bff",
+                color: "#fff",
+                border: "none",
+                padding: "10px 15px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                width: "100%",
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="container mx-auto py-6 px-4 flex-col max-w-6xl">
       <h1 className="text-2xl font-bold mb-6">User Profile</h1>
