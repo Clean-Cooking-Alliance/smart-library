@@ -24,3 +24,5 @@ torchvision
 transformers
 sentence-transformers
 pgvector
+numpy
+scipy
