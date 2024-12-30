@@ -167,8 +167,8 @@ export const ProfilePage: React.FC = () => {
           alignItems: "center",
           justifyContent: "center",
           height: "100vh",
-          backgroundColor: "#f0f4f8",
-          fontFamily: "Arial, sans-serif",
+          // backgroundColor: "#f0f4f8",
+          // fontFamily: "Arial, sans-serif",
         }}
       >
         <div
@@ -181,7 +181,7 @@ export const ProfilePage: React.FC = () => {
             textAlign: "center",
           }}
         >
-          <h2
+          {/* <h2
             style={{
               margin: "0 0 20px",
               fontSize: "20px",
@@ -189,7 +189,9 @@ export const ProfilePage: React.FC = () => {
             }}
           >
             Login to Access This Page
-          </h2>
+          </h2> */}
+          <h1 className="text-2xl font-bold mb-3">Log In to Access This Page</h1>
+
           <form onSubmit={handleLoginSubmit}>
             <input
               type="text"
@@ -219,15 +221,14 @@ export const ProfilePage: React.FC = () => {
             />
             <button
               type="submit"
-              style={{
-                backgroundColor: "#007bff",
-                color: "#fff",
-                border: "none",
-                padding: "10px 15px",
-                borderRadius: "4px",
-                cursor: "pointer",
-                width: "100%",
-              }}
+              // style={{backgroundColor: "#007bff",
+              //   color: "#fff",
+              //   border: "none",
+              //   padding: "10px 15px",
+              //   borderRadius: "4px",
+              //   cursor: "pointer",
+              //   width: "100%",}}
+              className="bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43] cursor-pointer w-full"
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
             >
