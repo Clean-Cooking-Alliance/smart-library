@@ -26,7 +26,7 @@ const CollapsibleSummary: React.FC<CollapsibleSummaryProps> = ({ summary }) => {
 
   return (
     <div>
-      <p className="text-gray-600">
+      <p className="text-gray-600 mt-3">
         {isCollapsed ? `${previewText}${isSliced ? '...' : ''}` : summary}
       </p>
       <button

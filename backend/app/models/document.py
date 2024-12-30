@@ -1,8 +1,15 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, Float, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, Float, ForeignKey, Table, Enum
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from datetime import datetime
 from app.db.base_class import Base
+import enum
+
+class ResourceType(enum.Enum):
+    ACADEMIC_ARTICLE = "Academic Article"
+    NEWS = "News"
+    VIDEO = "Video"
+    PODCAST = "Podcast"
 
 # Association table for document-tag relationship
 document_tags = Table(
@@ -24,6 +31,7 @@ class Document(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     embedding = Column(Vector, nullable=True)  # Added this line
+    resource_type = Column(Enum(ResourceType), nullable=False)  # Added this line
     
     # Relationships
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")

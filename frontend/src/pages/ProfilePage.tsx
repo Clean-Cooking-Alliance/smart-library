@@ -13,12 +13,13 @@ export const ProfilePage: React.FC = () => {
     source_url: '',
     year_published: '',
     tags: '',
+    resource_type: 'Academic Article',
   });
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadStatusFile, setUploadStatusFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
@@ -38,6 +39,8 @@ export const ProfilePage: React.FC = () => {
       tags,
     };
 
+    console.log('Payload:', payload);
+
     try {
       const response = await axios.post('http://localhost:8000/api/v1/documents/', payload, {
         headers: { 'Content-Type': 'application/json' },
@@ -49,9 +52,10 @@ export const ProfilePage: React.FC = () => {
         source_url: '',
         year_published: '',
         tags: '',
+        resource_type: 'Academic Article', // Reset to default value
       });
     } catch (error) {
-      console.error(error);
+      console.error('Axios error:', error.response ? error.response.data : error.message);
       setUploadStatus('Failed to add document. Please try again.');
     }
   }
@@ -100,7 +104,8 @@ export const ProfilePage: React.FC = () => {
             summary: row['Summary'],
             source_url: row['Link'],
             year_published: parseInt(row['Year Published'], 10),
-            tags: tags
+            tags: tags,
+            resource_type: row['Resource Type'] || 'Academic Article', // Default to 'Academic Article' if not provided
           };
         }
       };
@@ -185,7 +190,6 @@ export const ProfilePage: React.FC = () => {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
             rows={3}
-            required
           />
         </div>
         <div>
@@ -213,7 +217,6 @@ export const ProfilePage: React.FC = () => {
             value={formData.year_published}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-            required
           />
         </div>
         <div>
@@ -228,6 +231,23 @@ export const ProfilePage: React.FC = () => {
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
           />
+        </div>
+        <div>
+          <label htmlFor="resource_type" className="block text-sm font-medium">
+            Resource Type
+          </label>
+          <select
+            id="resource_type"
+            name="resource_type"
+            value={formData.resource_type}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          >
+            <option value="Academic Article">Academic Article</option>
+            <option value="News">News</option>
+            <option value="Video">Video</option>
+            <option value="Podcast">Podcast</option>
+          </select>
         </div>
         <button
           type="submit"

@@ -10,12 +10,18 @@ interface Tag {
 interface TagFilterProps {
   tags: Tag[];
   selectedTags: number[];
+  selectedResourceTypes: string[];
   onTagChange: (tagId: number) => void;
+  onResourceTypeChange: (resourceType: string) => void;
 }
 
-const TagFilter: React.FC<TagFilterProps> = ({ tags, selectedTags, onTagChange }) => {
+const TagFilter: React.FC<TagFilterProps> = ({ tags, selectedTags, selectedResourceTypes, onTagChange, onResourceTypeChange }) => {
   const handleTagChange = (tagId: number) => {
     onTagChange(tagId);
+  };
+
+  const handleResourceTypeChange = (resourceType: string) => {
+    onResourceTypeChange(resourceType);
   };
 
   const uniqueTags = Array.from(new Set(tags.map(tag => tag.id)))
@@ -29,9 +35,23 @@ const TagFilter: React.FC<TagFilterProps> = ({ tags, selectedTags, onTagChange }
     return acc;
   }, {} as Record<string, Tag[]>);
 
+  const resourceTypes = ['Academic Article', 'News', 'Video', 'Podcast'];
+
   return (
     <div className="p-4 border rounded-lg bg-white shadow-sm">
       <h2 className="text-xl font-bold mb-4 py-6">Resource Type</h2>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {resourceTypes.map((type) => (
+          <Badge
+            key={type}
+            variant="resource"
+            onClick={() => handleResourceTypeChange(type)}
+            className={`cursor-pointer ${selectedResourceTypes.includes(type) ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
+          >
+            {type}
+          </Badge>
+        ))}
+      </div>
       <hr></hr>
       <h2 className="text-xl font-bold mb-4 py-6">Filter by Tags</h2>
       {Object.entries(groupedTags).map(([category, tags]) => (

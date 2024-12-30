@@ -10,6 +10,7 @@ export interface Document {
     summary: string;
     source_url: string;
     year_published?: number;
+    resource_type: 'Academic Article' | 'News' | 'Video' | 'Podcast';
     tags: Tag[];
 }
 
