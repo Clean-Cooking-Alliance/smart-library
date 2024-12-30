@@ -1,3 +1,4 @@
+from app.models.document import ResourceType
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -15,7 +16,8 @@ def get_documents(
     region: Optional[str] = None,
     topic: Optional[str] = None,
     year: Optional[int] = None,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    resource_type: Optional[ResourceType] = None
 ):
     """
     Retrieve documents with optional filtering.
@@ -34,7 +36,8 @@ def get_documents(
             region=region,
             topic=topic,
             year=year,
-            search_term=search
+            search_term=search,
+            resource_type=resource_type
         )
         return documents
     except Exception as e:

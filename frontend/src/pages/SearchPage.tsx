@@ -27,6 +27,7 @@ interface BaseSearchResult {
   relevance_score: number;
   source: 'internal' | 'external';
   tags: Tag[];
+  resource_type: string;
 }
 
 interface InternalSearchResult extends BaseSearchResult {
@@ -43,6 +44,7 @@ interface CombinedSearchResponse {
 export const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
+  const [selectedResourceTypes, setSelectedResourceTypes] = React.useState<string[]>([]);
   const [isFrameworkQuery, setIsFrameworkQuery] = React.useState(false);
 
   const { data, isLoading, error } = useQuery({
@@ -73,6 +75,7 @@ export const SearchPage: React.FC = () => {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedTags([]);
+    setSelectedResourceTypes([]);
     setIsFrameworkQuery(false);
   };
 
@@ -89,6 +92,14 @@ export const SearchPage: React.FC = () => {
     );
   };
 
+  const handleResourceTypeChange = (resourceType: string) => {
+    setSelectedResourceTypes((prevSelectedResourceTypes) =>
+      prevSelectedResourceTypes.includes(resourceType)
+        ? prevSelectedResourceTypes.filter((type) => type !== resourceType)
+        : [...prevSelectedResourceTypes, resourceType]
+    );
+  };
+
   const filterResultsByTags = (results: BaseSearchResult[]) => {
     if (selectedTags.length === 0) return results;
     return results.filter((result) =>
@@ -96,6 +107,11 @@ export const SearchPage: React.FC = () => {
         ? (result as InternalSearchResult).tags.some((tag) => selectedTags.includes(tag.id!))
         : false
     );
+  };
+
+  const filterResultsByResourceTypes = (results: BaseSearchResult[]) => {
+    if (selectedResourceTypes.length === 0) return results;
+    return results.filter((result) => selectedResourceTypes.includes(result.resource_type));
   };
 
   const filterResultsByFramework = (results: BaseSearchResult[], frameworkName: string) => {
@@ -107,7 +123,7 @@ export const SearchPage: React.FC = () => {
   };
 
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
-    const filteredResults = filterResultsByTags(results);
+    const filteredResults = filterResultsByResourceTypes(filterResultsByTags(results));
     const { saveDocument, savedDocuments } = useSavedDocuments();
     if (!filteredResults.length) return null;
 
@@ -122,12 +138,19 @@ export const SearchPage: React.FC = () => {
           {filteredResults.map((result, index) => (
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <div className="flex justify-between">
-              <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
+                <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
                 <Bookmark
                   className={`w-6 h-6 text-#042449 cursor-pointer hover:fill-[#042449] ${isDocumentSaved(result.document_id) ? 'fill-[#042449]' : ''}`}
                   onClick={() => saveDocument(result)}
                 />
               </div>
+              {result.resource_type &&
+                (
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">
+                    {result.resource_type}
+                  </span>
+                )
+              }
               <CollapsibleSummary summary={result.summary} />
               {'tags' in result && (
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -153,8 +176,8 @@ export const SearchPage: React.FC = () => {
                 </a>
                 {!isFrameworkQuery && (
                   <span className="text-sm text-gray-500">
-                  Relevance: {(result.relevance_score * 100).toFixed(0)}%
-                </span>
+                    Relevance: {(result.relevance_score * 100).toFixed(0)}%
+                  </span>
                 )}
               </div>
             </div>
@@ -221,6 +244,9 @@ export const SearchPage: React.FC = () => {
                   ).filter((tag) => !isFrameworkQuery || tag?.name !== searchQuery)}
                 selectedTags={selectedTags}
                 onTagChange={handleTagChange}
+                resourceTypes={['Academic Article', 'News', 'Video', 'Podcast']}
+                selectedResourceTypes={selectedResourceTypes}
+                onResourceTypeChange={handleResourceTypeChange}
               />
             ) : (
               <div className="p-4 border rounded-lg bg-white shadow-sm">

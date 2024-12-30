@@ -3,7 +3,7 @@ from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.crud.base import CRUDBase
-from app.models.document import Document
+from app.models.document import Document, ResourceType
 from app.models.tag import Tag, TagCategory
 from app.schemas.document import DocumentCreate, DocumentUpdate
 from app.services.search_service import search_service 
@@ -40,7 +40,8 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
             title=obj_in.title,
             summary=obj_in.summary,
             source_url=obj_in.source_url,
-            year_published=obj_in.year_published
+            year_published=obj_in.year_published,
+            resource_type=obj_in.resource_type,  # Add resource_type
         )
 
         # Handle tags
@@ -124,29 +125,17 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         region: Optional[str] = None,
         topic: Optional[str] = None,
         year: Optional[int] = None,
-        search_term: Optional[str] = None
+        search_term: Optional[str] = None,
+        resource_type: Optional[ResourceType] = None
     ) -> List[Document]:
-        """
-        Get multiple documents with filters.
-        
-        Args:
-            db: Database session
-            skip: Number of records to skip (pagination)
-            limit: Maximum number of records to return
-            region: Filter by region tag
-            topic: Filter by topic tag
-            year: Filter by publication year
-            search_term: Search in title and summary
-        """
         query = db.query(self.model)
 
-        # Apply filters if provided
         if region:
             query = query.join(Document.tags).filter(
                 Tag.name == region,
                 Tag.category == TagCategory.REGION
             )
-        
+
         if topic:
             query = query.join(Document.tags).filter(
                 Tag.name == topic,
@@ -163,11 +152,10 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
             )
             query = query.filter(search_filter)
 
-        # Apply pagination
-        query = query.offset(skip).limit(limit)
+        if resource_type:
+            query = query.filter(Document.resource_type == resource_type)
 
-        # Make sure we don't get duplicate documents if we joined with tags
-        query = query.distinct()
+        query = query.offset(skip).limit(limit).distinct()
 
         return query.all()
 
