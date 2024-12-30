@@ -13,6 +13,7 @@ import numpy as np
 import faiss
 import traceback
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from app.core.config import settings
 from app.models.document import Document
@@ -152,6 +153,12 @@ class SearchService:
         query: str,
         limit: int
     ) -> List[ExternalSearchResult]:
+        
+        regions = {"Uganda", "Kenya", "Africa", "Asia", "Europe"}
+        # Add your technologies here
+        technologies = {"LPG", "Electric", "Biomass", "Solar"}
+
+        topics = {"Adoption", "Barriers", "Implementation", "Research"}
         """Search external sources using Perplexity API."""
         try:
             logger.info(f"Starting external search for query: {query}")
@@ -212,14 +219,27 @@ class SearchService:
 
                         results = json.loads(json_content)
                         processed_results = []
+
+
                         for result in results[:limit]:
                             if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
+                                tags = []
+                                for tag in regions:
+                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        tags.append(Tag(name=tag, category='region'))
+                                for tag in technologies:
+                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        tags.append(Tag(name=tag, category='technology'))
+                                for tag in topics:
+                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        tags.append(Tag(name=tag, category='topic'))
                                 processed_results.append(ExternalSearchResult(
                                     title=result['title'],
                                     summary=result['summary'],
                                     source_url=result['url'],
                                     relevance_score=self._calculate_relevance_score(result['url']),
-                                    source="external"
+                                    source="external",
+                                    tags=tags
                                 ))
 
                         return processed_results
@@ -267,6 +287,12 @@ class SearchService:
         except Exception as e:
             logger.error(f"Error getting embedding: {str(e)}")
             raise
+
+    def _calculate_distance(self, summary, tag):
+        summary_vec = self._get_embedding(summary)
+        tag_vec = self._get_embedding(tag)
+        return cosine_similarity([summary_vec], [tag_vec])[0][0]
+
 
     def _extract_json_from_markdown(self, content: str) -> str:
         """Extract JSON from markdown-formatted string."""

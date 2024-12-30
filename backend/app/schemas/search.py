@@ -40,6 +40,7 @@ class SearchResult(BaseSearchResult):
     tags: List[Tag] = []
 
 class ExternalSearchResult(BaseSearchResult):
+    tags: List[Tag] = []
     pass
 
 class CombinedSearchResponse(BaseModel):
