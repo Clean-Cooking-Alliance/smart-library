@@ -8,7 +8,7 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
  
-    --muted: 210 40% 96.1%;
+    /* --muted: 210 40% 96.1%; */
     --muted-foreground: 215.4 16.3% 46.9%;
  
     --popover: 0 0% 100%;
@@ -45,4 +45,40 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+/* 
+@media (max-width: 768px) {
+  .react-flow__node {
+    width: 20vw !important;
+    height: 20vw !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .react-flow__node {
+    width: 10vw !important;
+    height: 10vw !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .react-flow__node {
+    width: 5vw !important;
+    height: 5vw !important;
+  }
+} */
+
+.container {
+  /* display: flex; */
+  flex-wrap: wrap; /* Allows items to wrap */
+}
+
+.item {
+  flex: 1 1 50%; /* Grow, shrink, and set the base size to 50% */
+  max-width: 50%; /* Restricts maximum width to 50% */
+}
+
+.container.flex-col .item {
+  flex: 1 1 100%; /* In flex-col mode, make each item full width */
+  max-width: 100%;
 }
