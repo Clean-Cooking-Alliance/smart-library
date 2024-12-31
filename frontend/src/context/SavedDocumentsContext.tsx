@@ -4,6 +4,7 @@ import { Document } from '../types';
 interface SavedDocumentsContextProps {
   savedDocuments: Document[];
   saveDocument: (document: Document) => void;
+  unsaveDocument: (documentId: number) => void;
 }
 
 const SavedDocumentsContext = createContext<SavedDocumentsContextProps | undefined>(undefined);
@@ -24,8 +25,14 @@ export const SavedDocumentsProvider: React.FC<{ children: ReactNode }> = ({ chil
     localStorage.setItem('savedDocuments', JSON.stringify(updatedDocuments));
   };
 
+  const unsaveDocument = (documentId: number) => {
+    const updatedDocuments = savedDocuments.filter(doc => doc.document_id !== documentId);
+    setSavedDocuments(updatedDocuments);
+    localStorage.setItem('savedDocuments', JSON.stringify(updatedDocuments));
+  };
+
   return (
-    <SavedDocumentsContext.Provider value={{ savedDocuments, saveDocument }}>
+    <SavedDocumentsContext.Provider value={{ savedDocuments, saveDocument, unsaveDocument }}>
       {children}
     </SavedDocumentsContext.Provider>
   );
