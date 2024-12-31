@@ -228,7 +228,7 @@ export const ProfilePage: React.FC = () => {
               //   borderRadius: "4px",
               //   cursor: "pointer",
               //   width: "100%",}}
-              className="bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43] cursor-pointer w-full"
+              className="bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer w-full"
               onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
               onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
             >
@@ -258,7 +258,7 @@ export const ProfilePage: React.FC = () => {
           id="file-input"
           className="hidden"
         />
-        <label htmlFor="file-input" className="ml-auto bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43] cursor-pointer">
+        <label htmlFor="file-input" className="ml-auto bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer">
           Choose File
         </label>
         {isLoading && <div className="mt-4 text-sm text-blue-600">Loading...</div>}
@@ -356,7 +356,7 @@ export const ProfilePage: React.FC = () => {
         </div>
         <button
           type="submit"
-          className="bg-[#042449] text-white px-4 py-2 rounded shadow hover:bg-[#568d43]"
+          className="bg-[#042449] text-white px-4 py-2 rounded shadow"
         >
           Add Document
         </button>

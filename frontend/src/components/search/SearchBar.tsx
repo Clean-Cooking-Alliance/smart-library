@@ -29,7 +29,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => 
         placeholder="Search..."
         className="flex-1"
       />
-      <Button type="submit" disabled={isLoading} className="bg-[#042449] hover:bg-[#568d43]">
+      <Button type="submit" disabled={isLoading} className="bg-[#042449]">
       <MagnifyingGlassIcon className="w-6 h-6 text-white-500" />
       </Button>
     </form>
