@@ -5,12 +5,12 @@ import { SearchBar } from '../components/search/SearchBar';
 import CollapsibleSummary from '../components/ui/collapsiblesummary';
 import TagFilter from '../components/ui/tagfilter';
 import { Badge } from '@/components/ui';
-import MapChart from '@/components/ui/mapchart';
-import Diagram from '@/components/ui/customerlifecycleflow';
-import FlowDiagram from '@/components/ui/ecosystemmap';
-import LineCurve from '@/components/ui/productlifecycleline';
+import MapChart from '../components/ui/mapchart';
+import Diagram from '../components/ui/customerlifecycleflow';
+import FlowDiagram from '../components/ui/ecosystemmap';
+import LineCurve from '../components/ui/productlifecycleline';
 import { useSavedDocuments } from '../context/SavedDocumentsContext';
-import { Bookmark } from 'lucide-react'
+import { Bookmark } from 'lucide-react';
 
 import '@xyflow/react/dist/style.css';
 
@@ -122,9 +122,31 @@ export const SearchPage: React.FC = () => {
     );
   };
 
+  const saveExternalDocument = async (document: ExternalSearchResult) => {
+    const tags = document.tags.map(tag => ({
+      name: tag.name,
+      category: tag.category,
+    }));
+    
+    const payload = {
+      title: document.title,
+      summary: document.summary,
+      source_url: document.source_url,
+      tags: tags,
+      resource_type: document.resource_type || 'Academic Article',
+    }
+    console.log(payload);
+    try {
+      const response = await axios.post('http://localhost:8000/api/v1/documents/', payload);
+      console.log('Document saved:', response.data);
+    } catch (error) {
+      console.error('Error saving document:', error);
+    }
+  };
+
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
     const filteredResults = filterResultsByResourceTypes(filterResultsByTags(results));
-    const { saveDocument, savedDocuments } = useSavedDocuments();
+    const { saveDocument, unsaveDocument, savedDocuments } = useSavedDocuments();
     if (!filteredResults.length) return null;
 
     const isDocumentSaved = (documentId: number) => {
@@ -139,10 +161,25 @@ export const SearchPage: React.FC = () => {
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <div className="flex justify-between">
                 <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-                <Bookmark
-                  className={`w-6 h-6 text-#042449 cursor-pointer hover:fill-[#042449] ${isDocumentSaved(result.document_id) ? 'fill-[#042449]' : ''}`}
-                  onClick={() => saveDocument(result)}
-                />
+                {result.source === 'internal' || isFrameworkQuery ? (
+                  <Bookmark
+                    className={`w-6 h-6 stroke-[#568d43] cursor-pointer hover:fill-[#568d43] ${isDocumentSaved((result as InternalSearchResult).document_id) ? 'fill-[#568d43]' : ''}`}
+                    onClick={() => {
+                      if (isDocumentSaved((result as InternalSearchResult).document_id)) {
+                        unsaveDocument((result as InternalSearchResult).document_id);
+                      } else {
+                        saveDocument(result as InternalSearchResult);
+                      }
+                    }}
+                  />
+                ) : (
+                  <button
+                  className="bg-[#568d43] text-white text-xs px-2 py-2 rounded shadow"
+                  onClick={() => saveExternalDocument(result as ExternalSearchResult)}
+                  >
+                    Save to Internal Database
+                  </button>
+                )}
               </div>
               {result.resource_type &&
                 (
