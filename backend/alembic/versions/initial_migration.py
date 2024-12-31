@@ -15,6 +15,9 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
+    # Create extension
+    op.execute('CREATE EXTENSION IF NOT EXISTS vector')
+    
     # Create User table
     op.create_table(
         'user',
@@ -75,3 +78,5 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_user_id'), table_name='user')
     op.drop_index(op.f('ix_user_email'), table_name='user')
     op.drop_table('user')
+    # Remove extension
+    op.execute('DROP EXTENSION IF EXISTS vector')

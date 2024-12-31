@@ -11,7 +11,7 @@ services:
       - POSTGRES_DB=cleandb
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init-vector-extension.sql:/docker-entrypoint-initdb.d/init-vector-extension.sql
+      #- ./postgres/init-vector-extension.sql:/docker-entrypoint-initdb.d/init-vector-extension.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d cleandb"]
       interval: 5s
@@ -33,7 +33,7 @@ services:
         condition: service_healthy 
     command: >
       sh -c "
-        sleep 5 &&  # Additional safety delay
+        sleep 5 &&
         alembic upgrade head &&
         uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
