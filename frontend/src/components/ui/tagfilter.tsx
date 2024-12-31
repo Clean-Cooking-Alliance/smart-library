@@ -39,7 +39,7 @@ const TagFilter: React.FC<TagFilterProps> = ({ tags, selectedTags, selectedResou
 
   return (
     <div className="p-4 border rounded-lg bg-white shadow-sm">
-      <h2 className="text-xl font-bold mb-4 py-6">Resource Type</h2>
+      <h2 className="text-xl font-bold py-6">Resource Type</h2>
       <div className="flex flex-wrap gap-2 mb-4">
         {resourceTypes.map((type) => (
           <Badge
@@ -53,7 +53,7 @@ const TagFilter: React.FC<TagFilterProps> = ({ tags, selectedTags, selectedResou
         ))}
       </div>
       <hr></hr>
-      <h2 className="text-xl font-bold mb-4 py-6">Filter by Tags</h2>
+      <h2 className="text-xl font-bold py-6">Filter by Tags</h2>
       {Object.entries(groupedTags).map(([category, tags]) => (
         <div key={category} className="mb-4">
           <h3 className="text-lg font-semibold mb-2 capitalize">{category}</h3>
