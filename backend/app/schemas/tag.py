@@ -8,7 +8,9 @@ class TagCategory(str, Enum):
     TECHNOLOGY = "technology"
     FRAMEWORK = "framework"
     COUNTRY = "country"
-    UNKNOWN = "unknown"  # Default category
+    PRODUCT_LIFECYCLE = "product_lifecycle"
+    CUSTOMER_JOURNEY = "customer_journey"
+    UNKNOWN = "unknown"
 
 class TagBase(BaseModel):
     name: str

@@ -10,6 +10,8 @@ class TagCategory(str, PyEnum):
     TECHNOLOGY = "technology"
     FRAMEWORK = "framework"
     COUNTRY = "country"
+    PRODUCT_LIFECYCLE = "product_lifecycle"
+    CUSTOMER_JOURNEY = "customer_journey"
     UNKNOWN = "unknown"
 
 class Tag(Base):

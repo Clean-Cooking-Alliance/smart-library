@@ -3,6 +3,7 @@
 import logging
 import json
 import asyncio
+import csv
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
@@ -31,7 +32,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class SearchService:
-    def __init__(self):
+    def __init__(self, csv_file_path: Optional[str] = None):
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.cache = TTLCache(maxsize=100, ttl=3600)
         self.whitelisted_domains = [
@@ -46,7 +47,45 @@ class SearchService:
         self.perplexity_url = "https://api.perplexity.ai/chat/completions"
         self.index = None
         self.document_map = {}
-
+        self.csv_file_path = csv_file_path
+        self.regions = set()
+        self.technologies = set()
+        self.topics = set()
+        self.countries = set()
+        self.product_lifecycles = set()
+        self.customer_journies = set()
+        self.resource_types = set()
+        self._load_data_from_csv()
+    
+    def _load_data_from_csv(self):
+        with open(self.csv_file_path, mode='r', encoding='utf-8-sig') as csvfile:
+            reader = csv.DictReader(csvfile)
+            # print(reader.fieldnames)
+            for row in reader:
+                # print(row)
+                if row['Region']:
+                    self.regions.add(row['Region'])
+                if row['Country']:
+                    self.countries.add(row['Country'])
+                if row['Topic']:
+                    self.topics.add(row['Topic'])
+                if row['Technology']:
+                    self.technologies.add(row['Technology'])
+                if row['Product Lifecycle']:
+                    self.product_lifecycles.add(row['Product Lifecycle'])
+                if row['Customer Journey']:
+                    self.customer_journies.add(row['Customer Journey'])
+                if row['Type of Resource']:
+                    self.resource_types.add(row['Type of Resource'])
+            logger.info("Loaded data from CSV") 
+            # print(self.regions)
+            # print(self.countries)
+            # print(self.topics)
+            # print(self.technologies)
+            # print(self.product_lifecycles)
+            # print(self.customer_journies)
+            # print(self.resource_types)
+            
     def initialize_faiss_index(self, db: Session):
         """Initialize FAISS index with document embeddings from the database."""
         try:
@@ -166,7 +205,6 @@ class SearchService:
         regions = {"Uganda", "Kenya", "Africa", "Asia", "Europe"}
         # Add your technologies here
         technologies = {"LPG", "Electric", "Biomass", "Solar"}
-
         topics = {"Adoption", "Barriers", "Implementation", "Research"}
         """Search external sources using Perplexity API."""
         try:
@@ -229,19 +267,30 @@ class SearchService:
                         results = json.loads(json_content)
                         processed_results = []
 
-
                         for result in results[:limit]:
                             if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
                                 tags = []
-                                for tag in regions:
+                                for tag in self.regions:
                                     if self._calculate_distance(result['summary'], tag) >= 0.7:
                                         tags.append(Tag(name=tag, category='region'))
-                                for tag in technologies:
+                                for tag in self.technologies:
                                     if self._calculate_distance(result['summary'], tag) >= 0.7:
                                         tags.append(Tag(name=tag, category='technology'))
-                                for tag in topics:
+                                for tag in self.topics:
                                     if self._calculate_distance(result['summary'], tag) >= 0.7:
                                         tags.append(Tag(name=tag, category='topic'))
+                                for tag in self.countries:
+                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        tags.append(Tag(name=tag, category='country'))
+                                for tag in self.product_lifecycles:
+                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        tags.append(Tag(name=tag, category='product_lifecycle'))
+                                for tag in self.customer_journies:
+                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        tags.append(Tag(name=tag, category='customer_journey'))
+                                # for tag in self.resource_types:
+                                #     if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                #         tags.append(Tag(name=tag, category='topic'))
                                 processed_results.append(ExternalSearchResult(
                                     title=result['title'],
                                     summary=result['summary'],
@@ -324,4 +373,4 @@ class SearchService:
             return content.strip()
 
 
-search_service = SearchService()
+search_service = SearchService('app/explore.csv')

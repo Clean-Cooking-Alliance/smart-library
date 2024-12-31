@@ -14,6 +14,9 @@ const Badge: React.FC<BadgeProps> = ({ variant = 'secondary', className, ...prop
     topic: 'bg-yellow-100 text-yellow-800',
     technology: 'bg-red-100 text-red-800',
     framework: 'bg-purple-100 text-purple-800',
+    country: 'bg-indigo-100 text-indigo-800',
+    product_lifecycle: 'bg-teal-100 text-teal-800',
+    customer_journey: 'bg-pink-100 text-pink-800',
     unknown: 'bg-gray-100 text-gray-800'
   }[variant];
 

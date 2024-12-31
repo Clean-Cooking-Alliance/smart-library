@@ -101,6 +101,8 @@ export const ProfilePage: React.FC = () => {
         if (row) {
           const tags: any[] = [];
 
+          // const resource_types: any[] = [];
+
           if (row['Region']) {
             const regions = row['Region'].split('\n');
             regions.forEach((region: string) => {
@@ -122,13 +124,44 @@ export const ProfilePage: React.FC = () => {
             });
           }
 
+          if (row['Technology']) {
+            const technologies = row['Technology'].split('\n').map((technology: string) => technology.trim().replace("- ", ""));
+            technologies.forEach((technology: string) => {
+              tags.push({ name: technology, category: "technology" });
+            });
+          }
+          
+          if (row['Product lifecycle']) {
+            const productLifecycles = row['Product lifecycle'].split('\n').map((lifecycle: string) => lifecycle.trim().replace("- ", ""));
+            productLifecycles.forEach((lifecycle: string) => {
+              tags.push({ name: lifecycle, category: "product_lifecycle" });
+            });
+          }
+          
+          if (row['Customer Journey']) {
+            const customerJourneys = row['Customer Journey'].split('\n').map((journey: string) => journey.trim().replace("- ", ""));
+            customerJourneys.forEach((journey: string) => {
+              tags.push({ name: journey, category: "customer_journey" });
+            });
+          }
+
+          // if (row['Type of Resource']) {
+          //   const resourceTypes = row['Type of Resource'].split('\n').map((resourceType: string) => resourceType.trim().replace("- ", ""));
+          //   resourceTypes.forEach((resourceType: string) => {
+          //     resource_types.push({ name: resourceType, category: "resource_type" });
+          //   });
+          // }
+
+          // console.log(row);
+
           return {
             title: row['Title'],
             summary: row['Summary'],
             source_url: row['Link'],
             year_published: parseInt(row['Year Published'], 10),
             tags: tags,
-            resource_type: row['Resource Type'] || 'Academic Article', // Default to 'Academic Article' if not provided
+            resource_type: null,
+            // resource_type: row['Type of Resource'],
           };
         }
       };
@@ -352,6 +385,22 @@ export const ProfilePage: React.FC = () => {
             <option value="News">News</option>
             <option value="Video">Video</option>
             <option value="Podcast">Podcast</option>
+            <option value="Journey Map">Journey Map</option>
+            <option value="Discussion Brief">Discussion Brief</option>
+            <option value="Stories">Stories</option>
+            <option value="Webinar">Webinar</option>
+            <option value="Case Study">Case Study</option>
+            <option value="Factsheet">Factsheet</option>
+            <option value="Country Action Plan">Country Action Plan</option>
+            <option value="Research Report">Research Report</option>
+            <option value="Tool/ Toolkit">Tool/ Toolkit</option>
+            <option value="Journal Article">Journal Article</option>
+            <option value="Field Research">Field Research</option>
+            <option value="Market Assessments">Market Assessments</option>
+            <option value="Progress Report">Progress Report</option>
+            <option value="Persona">Persona</option>
+            <option value="Strategy Document">Strategy Document</option>
+            <option value="Policy Brief">Policy Brief</option>
           </select>
         </div>
         <button

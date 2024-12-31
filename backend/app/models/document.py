@@ -10,7 +10,24 @@ class ResourceType(enum.Enum):
     NEWS = "News"
     VIDEO = "Video"
     PODCAST = "Podcast"
-
+    JOURNEY_MAP = "Journey Map"
+    DISCUSSION_BRIEF = "Discussion Brief"
+    STORIES = "Stories"
+    WEBINAR = "Webinar"
+    CASE_STUDY = "Case Study"
+    FACTSHEET = "Factsheet"
+    COUNTRY_ACTION_PLAN = "Country Action Plan"
+    RESEARCH_REPORT = "Research Report"
+    TOOLKIT = "Tool/ Toolkit"
+    JOURNAL_ARTICLE = "Journal Article"
+    FIELD_RESEARCH = "Field Research"
+    MARKET_ASSESSMENTS = "Market Assessments"
+    PROGRESS_REPORT = "Progress Report"
+    PERSONA = "Persona"
+    STRATEGY_DOCUMENT = "Strategy Document"
+    POLICY_BRIEF = "Policy Brief"
+    BLOG = "Blog"
+    
 # Association table for document-tag relationship
 document_tags = Table(
     'document_tags',
@@ -31,7 +48,7 @@ class Document(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     embedding = Column(Vector, nullable=True)  # Added this line
-    resource_type = Column(Enum(ResourceType), nullable=False)  # Added this line
+    resource_type = Column(Enum(ResourceType), nullable=True)
     
     # Relationships
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")

@@ -16,19 +16,23 @@ logger = logging.getLogger(__name__)
 class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
     def _guess_tag_category(self, tag_name: str) -> TagCategory:
         """Guess the category of a tag based on predefined rules."""
-        # Add your regions here
-        regions = {"uganda", "kenya", "africa", "asia", "europe"}
-        # Add your technologies here
-        technologies = {"lpg", "electric", "biomass", "solar"}
+        regions = {'Sub-Saharan Africa', 'North America', 'Latin America and Caribbean', 'South Asia', 'Europe', 'Global', 'East Asia and Pacific'}
+        technologies = {'Ethanol', 'Pellets & Gasifier Stoves', 'Briquette Type Fuels', 'Improved Biomass Stoves', 'LPG', 'Biodigesters', 'Electric cooking'}
+        topics = {'Adoption', 'Livelihoods', 'Monitoring and Evaluation', 'Testing (actual testing of technologies/stoves/fuels)', 'Consumer Finance', 'Consumer Segmentation', 'Fuels', 'Standards', 'Carbon Finance'}
+        product_lifecycles = {'Maturity', 'Introduction', 'Decline', 'Growth'}
+        customer_journies = {'End of life', 'First Use', 'Consideration', 'Advocacy/Referral', 'Intention', 'Awareness', 'Acquisition', 'User Experience', 'Post-Purchase Support'}
+        tag_title = tag_name.title()
         
-        tag_lower = tag_name.lower()
-        
-        if tag_lower in regions:
+        if tag_title in regions:
             return TagCategory.REGION
-        elif tag_lower in technologies:
+        elif tag_title in technologies:
             return TagCategory.TECHNOLOGY
-        elif tag_lower in {"adoption", "barriers", "implementation", "research"}:
+        elif tag_title in topics:
             return TagCategory.TOPIC
+        elif tag_title in product_lifecycles:
+            return TagCategory.PRODUCT_LIFECYCLE
+        elif tag_title in customer_journies:
+            return TagCategory.CUSTOMER_JOURNEY
         else:
             return None
 
