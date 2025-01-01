@@ -4,6 +4,9 @@ from sqlalchemy import pool
 from alembic import context
 from app.core.config import settings
 from app.db.base import Base  # Import all models here
+import logging
+
+logger = logging.getLogger(__name__)
 
 # this is the Alembic Config object
 config = context.config
@@ -17,10 +20,12 @@ target_metadata = Base.metadata
 
 # Override sqlalchemy.url with environment variable
 def get_url():
+    logger.info(f"Database url in alembic config: {settings.DATABASE_URL}")
     return settings.DATABASE_URL
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
+    logger.info(f"Run migrations in 'offline' mode")
     url = get_url()
     context.configure(
         url=url,
@@ -34,6 +39,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    logger.info(f"Run migrations in 'online' mode")
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
     connectable = engine_from_config(
