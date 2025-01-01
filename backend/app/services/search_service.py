@@ -15,6 +15,10 @@ import faiss
 import traceback
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from transformers import pipeline
+from bs4 import BeautifulSoup
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from app.core.config import settings
 from app.models.document import Document
@@ -56,6 +60,8 @@ class SearchService:
         self.customer_journies = set()
         self.resource_types = set()
         self._load_data_from_csv()
+        self.summarizer = pipeline("summarization")
+        self.google_pse_url = "https://customsearch.googleapis.com/customsearch/v1"
     
     def _load_data_from_csv(self):
         with open(self.csv_file_path, mode='r', encoding='utf-8-sig') as csvfile:
@@ -214,45 +220,49 @@ class SearchService:
                 return []
             
             async with aiohttp.ClientSession() as session:
-                headers = {
-                    "Authorization": f"Bearer {settings.PERPLEXITY_API_KEY}",
-                    "Content-Type": "application/json"
+                params = {
+                    'key': settings.GOOGLE_SE_API_KEY,
+                    'q':'research papers and articles about: '+query,
+                    'cx':settings.SE_ID
                 }
+                # headers = {
+                #     "Authorization": f"Bearer {settings.PERPLEXITY_API_KEY}",
+                #     "Content-Type": "application/json"
+                # }
 
-                domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
-                enhanced_query = (
-                    f"Find research papers and articles about: {query}. "
-                    f"Only include results from these domains: {domain_filter}. "
-                    "Return the results as a JSON array with each item having fields: "
-                    "'title' (string), 'url' (string), and 'summary' (string of max 200 words)."
-                    "Do not include any markdown formatting or additional explanations."
-                )
+                # domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
+                # enhanced_query = (
+                #     f"Find research papers and articles about: {query}. "
+                #     f"Only include results from these domains: {domain_filter}. "
+                #     "Return the results as a JSON array with each item having fields: "
+                #     "'title' (string), 'url' (string), and 'summary' (string of max 200 words)."
+                #     "Do not include any markdown formatting or additional explanations."
+                # )
 
-                payload = {
-                    "model": "llama-3.1-sonar-large-128k-online",
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": (
-                                "You are a research assistant specializing in clean cooking "
-                                "research. Only return results from reputable sources and "
-                                "format the response as a valid JSON array. Respond with ONLY the requested JSON array, no additional text or formatting."
-                            )
-                        },
-                        {
-                            "role": "user",
-                            "content": enhanced_query
-                        }
-                    ],
-                    "temperature": 0.1,
-                    "max_tokens": 1024
-                }
+                # payload = {
+                #     "model": "llama-3.1-sonar-large-128k-online",
+                #     "messages": [
+                #         {
+                #             "role": "system",
+                #             "content": (
+                #                 "You are a research assistant specializing in clean cooking "
+                #                 "research. Only return results from reputable sources and "
+                #                 "format the response as a valid JSON array. Respond with ONLY the requested JSON array, no additional text or formatting."
+                #             )
+                #         },
+                #         {
+                #             "role": "user",
+                #             "content": enhanced_query
+                #         }
+                #     ],
+                #     "temperature": 0.1,
+                #     "max_tokens": 1024
+                # }
 
                 try:
-                    async with session.post(
-                        self.perplexity_url,
-                        headers=headers,
-                        json=payload,
+                    async with session.get(
+                        self.google_pse_url,
+                        params=params,
                         timeout=30
                     ) as response:
                         if response.status != 200:
@@ -261,44 +271,52 @@ class SearchService:
                             return []
 
                         data = await response.json()
-                        content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
-                        json_content = self._extract_json_from_markdown(content)
+                        # content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+                        # json_content = self._extract_json_from_markdown(content)
 
-                        results = json.loads(json_content)
+                        # results = json.loads(json_content)
                         processed_results = []
 
-                        for result in results[:limit]:
-                            if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
-                                tags = []
-                                for tag in self.regions:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='region'))
-                                for tag in self.technologies:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='technology'))
-                                for tag in self.topics:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='topic'))
-                                for tag in self.countries:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='country'))
-                                for tag in self.product_lifecycles:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='product_lifecycle'))
-                                for tag in self.customer_journies:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='customer_journey'))
-                                # for tag in self.resource_types:
-                                #     if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                #         tags.append(Tag(name=tag, category='topic'))
-                                processed_results.append(ExternalSearchResult(
-                                    title=result['title'],
-                                    summary=result['summary'],
-                                    source_url=result['url'],
-                                    relevance_score=self._calculate_relevance_score(result['url']),
-                                    source="external",
-                                    tags=tags
-                                ))
+                        with ThreadPoolExecutor() as executor:
+        # Use asyncio.gather to run all tasks concurrently
+                            processed_results = await asyncio.gather(
+                                *[self.process_result(result) for result in data['items']]
+                            )
+
+                        # for result in data['items']:
+                        #     text = await self._get_text_from_url(result['link'])
+                        #     result['summary'] = self._summarize_text(text)
+                        #     if any(domain in result['link'].lower() for domain in self.whitelisted_domains):
+                        #         tags = []
+                        #         for tag in self.regions:
+                        #             if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #                 tags.append(Tag(name=tag, category='region'))
+                        #         for tag in self.technologies:
+                        #             if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #                 tags.append(Tag(name=tag, category='technology'))
+                        #         for tag in self.topics:
+                        #             if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #                 tags.append(Tag(name=tag, category='topic'))
+                        #         for tag in self.countries:
+                        #             if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #                 tags.append(Tag(name=tag, category='country'))
+                        #         for tag in self.product_lifecycles:
+                        #             if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #                 tags.append(Tag(name=tag, category='product_lifecycle'))
+                        #         for tag in self.customer_journies:
+                        #             if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #                 tags.append(Tag(name=tag, category='customer_journey'))
+                        #         # for tag in self.resource_types:
+                        #         #     if self._calculate_distance(result['summary'], tag) >= 0.7:
+                        #         #         tags.append(Tag(name=tag, category='topic'))
+                        #         processed_results.append(ExternalSearchResult(
+                        #             title=result['title'],
+                        #             summary=result['summary'],
+                        #             source_url=result['link'],
+                        #             relevance_score=self._calculate_relevance_score(result['link']),
+                        #             source="external",
+                        #             tags=tags
+                        #         ))
 
                         return processed_results
 
@@ -371,6 +389,88 @@ class SearchService:
         except Exception as e:
             logger.error(f"Error extracting JSON from markdown: {e}")
             return content.strip()
+        
+    async def _get_text_from_url(self, url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+            # Ensure a successful response
+                if response.status == 200:
+                    # Read the response body as text
+                    r = await response.text()
+
+                    soup = BeautifulSoup(r, 'html.parser')
+                    results = soup.find_all(['h1', 'p'])
+                    text = [result.text for result in results]
+                    return str(' '.join(text))
+                else:
+                    print(f"Request failed with status: {response.status}")
+                    return ""
+            
+            
+    
+    async def process_result(self, result):
+        # Fetch text from the URL
+        text = await self._get_text_from_url(result['link'])
+        # Summarize the text
+        result['summary'] = self._summarize_text(text)
+
+        # Process tags
+        tags = []
+        if any(domain in result['link'].lower() for domain in self.whitelisted_domains):
+            for tag in self.regions:
+                if self._calculate_distance(result['summary'], tag) >= 0.7:
+                    tags.append(Tag(name=tag, category='region'))
+            for tag in self.technologies:
+                if self._calculate_distance(result['summary'], tag) >= 0.7:
+                    tags.append(Tag(name=tag, category='technology'))
+            for tag in self.topics:
+                if self._calculate_distance(result['summary'], tag) >= 0.7:
+                    tags.append(Tag(name=tag, category='topic'))
+            for tag in self.countries:
+                if self._calculate_distance(result['summary'], tag) >= 0.7:
+                    tags.append(Tag(name=tag, category='country'))
+            for tag in self.product_lifecycles:
+                if self._calculate_distance(result['summary'], tag) >= 0.7:
+                    tags.append(Tag(name=tag, category='product_lifecycle'))
+            for tag in self.customer_journies:
+                if self._calculate_distance(result['summary'], tag) >= 0.7:
+                    tags.append(Tag(name=tag, category='customer_journey'))
+
+        # Construct the processed result
+        return ExternalSearchResult(
+            title=result['title'],
+            summary=result['summary'],
+            source_url=result['link'],
+            relevance_score=self._calculate_relevance_score(result['link']),
+            source="external",
+            tags=tags
+        )
+
+
+    def _summarize_text(self, text):
+        max_chunk = 500
+        text = text.replace('.', '.<eos>')
+        text = text.replace('?', '?<eos>')
+        text = text.replace('!', '!<eos>')
+        sentences = text.split('<eos>')
+        current_chunk = 0 
+        chunks = []
+        for sentence in sentences:
+            if len(chunks) == current_chunk + 1: 
+                if len(chunks[current_chunk]) + len(sentence.split(' ')) <= max_chunk:
+                    chunks[current_chunk].extend(sentence.split(' '))
+            else:
+                current_chunk += 1
+                chunks.append(sentence.split(' '))
+        else:
+            chunks.append(sentence.split(' '))
+
+        for chunk_id in range(len(chunks)):
+            chunks[chunk_id] = ' '.join(chunks[chunk_id])
+        
+        res = self.summarizer(chunks)
+        return ' '.join([summ['summary_text'] for summ in res])
+
 
 
 search_service = SearchService('app/explore.csv')

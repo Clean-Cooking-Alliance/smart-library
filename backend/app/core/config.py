@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     PERPLEXITY_API_KEY: Optional[str] = None
     JWT_SECRET: str
+    GOOGLE_SE_API_KEY: str 
+    SE_ID: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     CACHE_TIMEOUT: int = 60 * 60 * 24  # 24 hours cache
 

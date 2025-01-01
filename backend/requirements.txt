@@ -26,3 +26,4 @@ sentence-transformers
 pgvector
 numpy
 scipy
+beautifulsoup4
