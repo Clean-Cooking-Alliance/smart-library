@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { useSavedDocuments } from '../context/SavedDocumentsContext';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { ExternalLink } from 'lucide-react';
+// import { useSavedDocuments } from '../context/SavedDocumentsContext';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
@@ -83,7 +80,7 @@ export const ProfilePage: React.FC = () => {
     }
   }
 
-  const { savedDocuments } = useSavedDocuments();
+  // const { savedDocuments } = useSavedDocuments();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -179,6 +176,7 @@ export const ProfilePage: React.FC = () => {
           await axios.post(url, payload, { headers });
         }
         setUploadStatusFile(`${file.name} imported successfully.`);
+        alert(`${file.name} imported successfully.`);
       } catch (error) {
         console.error(error);
         setUploadStatusFile(`Failed to import file. Please try again.`);

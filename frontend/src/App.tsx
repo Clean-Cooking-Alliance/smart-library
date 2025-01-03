@@ -7,7 +7,7 @@ import { FrameworkExplorer } from './components/explore/FrameworkExplorer';
 import { Layout } from './components/layout/Layout';
 import { ProfilePage } from './pages/ProfilePage';
 import { SavedDocuments } from './pages/SavedDocuments';
-import { SavedDocumentsProvider } from './context/SavedDocumentsContext';
+// import { SavedDocumentsProvider } from './context/SavedDocumentsContext';
 
 const queryClient = new QueryClient();
 
@@ -16,7 +16,7 @@ function App() {
     queryClient.invalidateQueries('search');
   }
   return (
-    <SavedDocumentsProvider>
+    // <SavedDocumentsProvider>
     <QueryClientProvider client={queryClient}>
       <Router>
         <Layout resetSearch={resetSearch}>
@@ -30,7 +30,7 @@ function App() {
         </Layout>
       </Router>
     </QueryClientProvider>
-    </SavedDocumentsProvider>
+    // </SavedDocumentsProvider>
   );
 }
 

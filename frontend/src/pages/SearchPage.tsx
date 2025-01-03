@@ -1,5 +1,5 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { SearchBar } from '../components/search/SearchBar';
 import CollapsibleSummary from '../components/ui/collapsiblesummary';
@@ -9,7 +9,7 @@ import MapChart from '../components/ui/mapchart';
 import Diagram from '../components/ui/customerlifecycleflow';
 import FlowDiagram from '../components/ui/ecosystemmap';
 import LineCurve from '../components/ui/productlifecycleline';
-import { useSavedDocuments } from '../context/SavedDocumentsContext';
+// import { useSavedDocuments } from '../context/SavedDocumentsContext';
 import { Bookmark } from 'lucide-react';
 
 import '@xyflow/react/dist/style.css';
@@ -32,6 +32,7 @@ interface BaseSearchResult {
 
 interface InternalSearchResult extends BaseSearchResult {
   document_id: number;
+  saved: boolean;
 }
 
 interface ExternalSearchResult extends BaseSearchResult { }
@@ -42,10 +43,12 @@ interface CombinedSearchResponse {
 }
 
 export const SearchPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
-  const [selectedResourceTypes, setSelectedResourceTypes] = React.useState<string[]>([]);
-  const [isFrameworkQuery, setIsFrameworkQuery] = React.useState(false);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [selectedResourceTypes, setSelectedResourceTypes] = useState<string[]>([]);
+  const [isFrameworkQuery, setIsFrameworkQuery] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
@@ -144,15 +147,41 @@ export const SearchPage: React.FC = () => {
     }
   };
 
+  const saveDocument = async (document: InternalSearchResult) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      console.log(token);
+      console.log('Document:', document);
+  
+      const payload = {
+        document_id: document.id,
+      };
+
+      console.log(payload);
+  
+      const response = await axios.post(
+        `http://localhost:8000/api/v1/documents/save`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const newState = response.data.saved;
+      document.saved = newState;
+      queryClient.invalidateQueries(['search', searchQuery]);
+      console.log('Document saved:', response.data);
+    } catch (error) {
+      console.error('Error saving document:', error);
+    }
+  };
+
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
     const filteredResults = filterResultsByResourceTypes(filterResultsByTags(results));
-    const { saveDocument, unsaveDocument, savedDocuments } = useSavedDocuments();
+    // const { saveDocument, unsaveDocument, savedDocuments } = useSavedDocuments();
     if (!filteredResults.length) return null;
-
-    const isDocumentSaved = (documentId: number) => {
-      return savedDocuments.some((doc) => doc.document_id === documentId);
-    };
-
     return (
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">{title}</h2>
@@ -163,14 +192,9 @@ export const SearchPage: React.FC = () => {
                 <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
                 {result.source === 'internal' || isFrameworkQuery ? (
                   <Bookmark
-                    className={`w-6 h-6 stroke-[#568d43] cursor-pointer hover:fill-[#568d43] ${isDocumentSaved((result as InternalSearchResult).document_id) ? 'fill-[#568d43]' : ''}`}
-                    onClick={() => {
-                      if (isDocumentSaved((result as InternalSearchResult).document_id)) {
-                        unsaveDocument((result as InternalSearchResult).document_id);
-                      } else {
-                        saveDocument(result as InternalSearchResult);
-                      }
-                    }}
+                    id="save-button"
+                    onClick={() => saveDocument((result as InternalSearchResult))}
+                    className={`w-6 h-6 stroke-[#568d43] cursor-pointer hover:fill-[#568d43] ${(result as InternalSearchResult).saved ? 'fill-[#568d43]' : ''}`}
                   />
                 ) : (
                   <button

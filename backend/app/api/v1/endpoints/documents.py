@@ -1,10 +1,13 @@
 from app.models.document import ResourceType
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Any
 from ....schemas import Document, DocumentCreate, DocumentUpdate
 from ....crud import crud_document
 from ....deps import get_db
+from ....models.user import User
+from ....core.security import get_current_user
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -128,3 +131,27 @@ def get_documents_by_framework(
             status_code=500,
             detail=f"Error retrieving documents: {str(e)}"
         )
+
+class SaveDocumentRequest(BaseModel):
+    document_id: int
+
+@router.post("/save", response_model=Document)
+def save_document(
+    *,
+    db: Session = Depends(get_db),
+    request: SaveDocumentRequest,
+    # current_user: User = Depends(get_current_user),
+) -> Any:
+    """
+    Save a document (add it to the saved documents list).
+    """
+    document = crud_document.get(db, id=request.document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # current_user.saved_documents.append(document)
+    old = document.saved
+    document.saved = not old
+    db.commit()
+    db.refresh(document)
+    return document

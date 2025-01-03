@@ -10,6 +10,7 @@ class DocumentBase(BaseModel):
     source_url: str  # URL to the actual research paper
     year_published: Optional[int] = None
     resource_type: Optional[ResourceType]
+    saved: bool = False
 
 class DocumentCreate(DocumentBase):
     tags: Optional[List[Tag]] = []  # Tag names to be associated with the document
@@ -23,6 +24,7 @@ class Document(DocumentBase):
     created_at: datetime
     updated_at: datetime
     tags: List[Tag] = []
+    saved: bool = False
 
     class Config:
         from_attributes = True

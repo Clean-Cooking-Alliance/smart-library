@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ARRAY, Float, ForeignKey, Table, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table, Enum, Boolean
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from datetime import datetime
@@ -27,13 +27,21 @@ class ResourceType(enum.Enum):
     STRATEGY_DOCUMENT = "Strategy Document"
     POLICY_BRIEF = "Policy Brief"
     BLOG = "Blog"
-    
+
 # Association table for document-tag relationship
 document_tags = Table(
     'document_tags',
     Base.metadata,
     Column('document_id', Integer, ForeignKey('document.id')),
     Column('tag_id', Integer, ForeignKey('tag.id'))
+)
+
+# Association table for user-saved documents relationship
+saved_documents = Table(
+    'saved_documents',
+    Base.metadata,
+    Column('user_id', Integer, ForeignKey('user.id')),
+    Column('document_id', Integer, ForeignKey('document.id'))
 )
 
 class Document(Base):
@@ -47,8 +55,14 @@ class Document(Base):
     year_published = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    embedding = Column(Vector, nullable=True)  # Added this line
+    embedding = Column(Vector, nullable=True)
     resource_type = Column(Enum(ResourceType), nullable=True)
-    
+    saved = Column(Boolean, default=False)
+
     # Relationships
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")
+    saved_by_users = relationship("User", secondary=saved_documents, back_populates="saved_documents")
+
+    @property
+    def is_saved_by_user(self, user_id: int) -> bool:
+        return any(user.id == user_id for user in self.saved_by_users)

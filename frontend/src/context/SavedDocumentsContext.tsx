@@ -1,47 +1,43 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Document } from '../types';
+// import React, { createContext, useContext, useState } from 'react';
 
-interface SavedDocumentsContextProps {
-  savedDocuments: Document[];
-  saveDocument: (document: Document) => void;
-  unsaveDocument: (documentId: number) => void;
-}
+// interface Document {
+//   document_id: number;
+//   title: string;
+//   summary: string;
+//   source_url: string;
+//   tags: Tag[];
+// }
 
-const SavedDocumentsContext = createContext<SavedDocumentsContextProps | undefined>(undefined);
+// interface SavedDocumentsContextType {
+//   savedDocuments: Document[];
+//   saveDocument: (document: Document) => void;
+//   unsaveDocument: (document_id: number) => void;
+// }
 
-export const SavedDocumentsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [savedDocuments, setSavedDocuments] = useState<Document[]>([]);
+// const SavedDocumentsContext = createContext<SavedDocumentsContextType | undefined>(undefined);
 
-  useEffect(() => {
-    const savedDocs = localStorage.getItem('savedDocuments');
-    if (savedDocs) {
-      setSavedDocuments(JSON.parse(savedDocs));
-    }
-  }, []);
+// export const SavedDocumentsProvider: React.FC = ({ children }) => {
+//   const [savedDocuments, setSavedDocuments] = useState<Document[]>([]);
 
-  const saveDocument = (document: Document) => {
-    const updatedDocuments = [...savedDocuments, document];
-    setSavedDocuments(updatedDocuments);
-    localStorage.setItem('savedDocuments', JSON.stringify(updatedDocuments));
-  };
+//   const saveDocument = (document: Document) => {
+//     setSavedDocuments((prev) => [...prev, document]);
+//   };
 
-  const unsaveDocument = (documentId: number) => {
-    const updatedDocuments = savedDocuments.filter(doc => doc.document_id !== documentId);
-    setSavedDocuments(updatedDocuments);
-    localStorage.setItem('savedDocuments', JSON.stringify(updatedDocuments));
-  };
+//   const unsaveDocument = (document_id: number) => {
+//     setSavedDocuments((prev) => prev.filter(doc => doc.document_id !== document_id));
+//   };
 
-  return (
-    <SavedDocumentsContext.Provider value={{ savedDocuments, saveDocument, unsaveDocument }}>
-      {children}
-    </SavedDocumentsContext.Provider>
-  );
-};
+//   return (
+//     <SavedDocumentsContext.Provider value={{ savedDocuments, saveDocument, unsaveDocument }}>
+//       {children}
+//     </SavedDocumentsContext.Provider>
+//   );
+// };
 
-export const useSavedDocuments = () => {
-  const context = useContext(SavedDocumentsContext);
-  if (!context) {
-    throw new Error('useSavedDocuments must be used within a SavedDocumentsProvider');
-  }
-  return context;
-};
+// export const useSavedDocuments = () => {
+//   const context = useContext(SavedDocumentsContext);
+//   if (!context) {
+//     throw new Error('useSavedDocuments must be used within a SavedDocumentsProvider');
+//   }
+//   return context;
+// };
