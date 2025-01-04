@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useSavedDocuments } from '../context/SavedDocumentsContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
@@ -83,7 +82,6 @@ export const ProfilePage: React.FC = () => {
     }
   }
 
-  const { savedDocuments } = useSavedDocuments();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

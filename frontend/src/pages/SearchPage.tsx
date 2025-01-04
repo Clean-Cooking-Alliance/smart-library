@@ -9,7 +9,6 @@ import MapChart from '../components/ui/mapchart';
 import Diagram from '../components/ui/customerlifecycleflow';
 import FlowDiagram from '../components/ui/ecosystemmap';
 import LineCurve from '../components/ui/productlifecycleline';
-import { useSavedDocuments } from '../context/SavedDocumentsContext';
 import { Bookmark } from 'lucide-react';
 
 import '@xyflow/react/dist/style.css';
@@ -146,12 +145,7 @@ export const SearchPage: React.FC = () => {
 
   const renderSearchResults = (results: BaseSearchResult[], title: string) => {
     const filteredResults = filterResultsByResourceTypes(filterResultsByTags(results));
-    const { saveDocument, unsaveDocument, savedDocuments } = useSavedDocuments();
     if (!filteredResults.length) return null;
-
-    const isDocumentSaved = (documentId: number) => {
-      return savedDocuments.some((doc) => doc.document_id === documentId);
-    };
 
     return (
       <div className="mb-8">
@@ -161,25 +155,14 @@ export const SearchPage: React.FC = () => {
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <div className="flex justify-between">
                 <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-                {result.source === 'internal' || isFrameworkQuery ? (
-                  <Bookmark
-                    className={`w-6 h-6 stroke-[#568d43] cursor-pointer hover:fill-[#568d43] ${isDocumentSaved((result as InternalSearchResult).document_id) ? 'fill-[#568d43]' : ''}`}
-                    onClick={() => {
-                      if (isDocumentSaved((result as InternalSearchResult).document_id)) {
-                        unsaveDocument((result as InternalSearchResult).document_id);
-                      } else {
-                        saveDocument(result as InternalSearchResult);
-                      }
-                    }}
-                  />
-                ) : (
+                {result.source === 'external' ? (
                   <button
                   className="bg-[#568d43] text-white text-xs px-2 py-2 rounded shadow"
                   onClick={() => saveExternalDocument(result as ExternalSearchResult)}
                   >
                     Save to Internal Database
                   </button>
-                )}
+                ): null}
               </div>
               {result.resource_type &&
                 (

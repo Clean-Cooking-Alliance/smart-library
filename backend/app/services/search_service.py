@@ -11,7 +11,6 @@ from openai import OpenAI
 import aiohttp
 from cachetools import TTLCache
 import numpy as np
-import faiss
 import traceback
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity

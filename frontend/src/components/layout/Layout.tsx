@@ -102,7 +102,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, resetSearch }) => {
             </TabsList>
           </Tabs> */}
           <div className="flex space-x-4 items-center">
-            <Bookmark className="w-6 h-6 text-#042449 fill-current cursor-pointer" onClick={() => navigate('/saved')} />
             <User className="w-6 h-6 text-#042449 fill-current cursor-pointer" onClick={() => navigate('/profile')} />
           </div>
         </div>
