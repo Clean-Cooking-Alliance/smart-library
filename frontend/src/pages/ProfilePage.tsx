@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { ExternalLink } from 'lucide-react';
@@ -9,24 +9,58 @@ export const ProfilePage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [noUsers, setNoUsers] = useState(false);
 
-  // Predefined username and password (for demonstration purposes)
+  useEffect(() => {
+    const checkUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/v1/users/users');
+        if (response.data.length === 0) {
+          setNoUsers(true);
+        }
+      } catch (error) {
+        console.error('Error checking users:', error);
+      }
+    };
+
+    checkUsers();
+  }, []);
+
+  // // Predefined username and password (for demonstration purposes)
   const correctCredentials = {
     username: "admin",
     password: "secret123",
   };
 
-  // Handle login form submission
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (username === correctCredentials.username && password === correctCredentials.password) {
-      setIsAuthenticated(true);
-    } else {
+    try {
+      const response = await axios.post('http://localhost:8000/api/v1/users/login', {
+        username,
+        password,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(username, password);
+
+      if (response.data.access_token) {
+        setIsAuthenticated(true);
+      }
+
+      localStorage.setItem('userData', JSON.stringify({"email": username, "password": password}));
+
+      setUserData({
+        email: '',
+        password: '',
+      })
+    } catch (error) {
       alert("Incorrect username or password");
     }
   };
 
-  
   const [formData, setFormData] = useState({
     title: '',
     summary: '',
@@ -36,7 +70,11 @@ export const ProfilePage: React.FC = () => {
     resource_type: 'Academic Article',
   });
 
-  
+  const [userData, setUserData] = useState({
+    email: '',
+    password: '',
+  });
+
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadStatusFile, setUploadStatusFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +82,11 @@ export const ProfilePage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleUserInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUserData({ ...userData, [name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,8 +123,44 @@ export const ProfilePage: React.FC = () => {
       console.error('Axios error:', error.response ? error.response.data : error.message);
       setUploadStatus('Failed to add document. Please try again.');
     }
-  }
+  };
 
+  const handleUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadStatus(null);
+
+    setUserData({
+      email: '',
+      password: '',
+    });
+
+    const payload = {
+      ...userData,
+    };
+
+    try {
+      const response = await axios.post('http://localhost:8000/api/v1/users/', payload, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      setUploadStatus(`User added successfully: ${response.data.id}`);
+
+      console.log(userData);
+
+      if (!isAuthenticated) {
+        localStorage.setItem('userData', JSON.stringify(userData));
+
+        setUserData({
+          email: '',
+          password: '',
+        });
+      }
+
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Axios error:', error.response ? error.response.data : error.message);
+      setUploadStatus('Failed to add user. Please try again.');
+    }
+  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -98,8 +177,6 @@ export const ProfilePage: React.FC = () => {
       const createJson = (row: any) => {
         if (row) {
           const tags: any[] = [];
-
-          // const resource_types: any[] = [];
 
           if (row['Region']) {
             const regions = row['Region'].split('\n');
@@ -128,29 +205,20 @@ export const ProfilePage: React.FC = () => {
               tags.push({ name: technology, category: "technology" });
             });
           }
-          
+
           if (row['Product lifecycle']) {
             const productLifecycles = row['Product lifecycle'].split('\n').map((lifecycle: string) => lifecycle.trim().replace("- ", ""));
             productLifecycles.forEach((lifecycle: string) => {
               tags.push({ name: lifecycle, category: "product_lifecycle" });
             });
           }
-          
+
           if (row['Customer Journey']) {
             const customerJourneys = row['Customer Journey'].split('\n').map((journey: string) => journey.trim().replace("- ", ""));
             customerJourneys.forEach((journey: string) => {
               tags.push({ name: journey, category: "customer_journey" });
             });
           }
-
-          // if (row['Type of Resource']) {
-          //   const resourceTypes = row['Type of Resource'].split('\n').map((resourceType: string) => resourceType.trim().replace("- ", ""));
-          //   resourceTypes.forEach((resourceType: string) => {
-          //     resource_types.push({ name: resourceType, category: "resource_type" });
-          //   });
-          // }
-
-          // console.log(row);
 
           return {
             title: row['Title'],
@@ -159,7 +227,6 @@ export const ProfilePage: React.FC = () => {
             year_published: parseInt(row['Year Published'], 10),
             tags: tags,
             resource_type: null,
-            // resource_type: row['Type of Resource'],
           };
         }
       };
@@ -190,93 +257,154 @@ export const ProfilePage: React.FC = () => {
 
   // Render the login form if not authenticated
   if (!isAuthenticated) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          // backgroundColor: "#f0f4f8",
-          // fontFamily: "Arial, sans-serif",
-        }}
-      >
+    if (noUsers) {
+      return (
         <div
           style={{
-            backgroundColor: "#ffffff",
-            borderRadius: "8px",
-            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-            padding: "20px",
-            width: "300px",
-            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
           }}
         >
-          {/* <h2
+          <div
             style={{
-              margin: "0 0 20px",
-              fontSize: "20px",
-              color: "#333",
+              backgroundColor: "#ffffff",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              padding: "20px",
+              width: "300px",
+              textAlign: "center",
             }}
           >
-            Login to Access This Page
-          </h2> */}
-          <h1 className="text-2xl font-bold mb-3">Log In to Access This Page</h1>
+            <h1 className="text-2xl font-bold mb-3">Register to Access This Page</h1>
 
-          <form onSubmit={handleLoginSubmit}>
-            <input
-              type="text"
-              placeholder="Enter username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                margin: "10px 0",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-              }}
-            />
-            <input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                margin: "10px 0",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-              }}
-            />
-            <button
-              type="submit"
-              // style={{backgroundColor: "#007bff",
-              //   color: "#fff",
-              //   border: "none",
-              //   padding: "10px 15px",
-              //   borderRadius: "4px",
-              //   cursor: "pointer",
-              //   width: "100%",}}
-              className="bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer w-full"
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
-            >
-              Login
-            </button>
-          </form>
+            <form onSubmit={handleUserSubmit} className="space-y-4">
+              {/* <div>
+                <label htmlFor="username" className="block text-sm font-medium">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={userData.username}
+                  onChange={handleUserInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  required
+                />
+              </div> */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={userData.email}
+                  onChange={handleUserInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={userData.password}
+                  onChange={handleUserInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-[#042449] text-white px-4 py-2 rounded shadow"
+              >
+                Add User
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    else {
+      return (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+              padding: "20px",
+              width: "300px",
+              textAlign: "center",
+            }}
+          >
+            <h1 className="text-2xl font-bold mb-3">Log In to Access This Page</h1>
+
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer w-full"
+              >
+                Login
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
   }
   return (
     <div className="container mx-auto py-6 px-4 flex-col max-w-6xl">
       <h1 className="text-2xl font-bold mb-6">User Profile</h1>
       <div className="mb-6">
-        {/* <img src="/path/to/profile-picture.jpg" alt="Profile" className="w-24 h-24 rounded-full mb-4" /> */}
-        <h2 className="text-xl font-semibold">John Doe</h2>
-        <p className="text-gray-600">john.doe@example.com</p>
+        {/* {console.log(userData.email)} */}
+        {/* <h2 className="text-xl font-semibold">John Doe</h2> */}
+        <p className="text-gray-600">{localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData') as string)["email"] : ''}</p>
       </div>
       <hr></hr>
       <h1 className="text-2xl font-bold mt-6 mb-6">Add New Document(s)</h1>
@@ -406,6 +534,63 @@ export const ProfilePage: React.FC = () => {
           className="bg-[#042449] text-white px-4 py-2 rounded shadow"
         >
           Add Document
+        </button>
+      </form>
+      {uploadStatus && (
+        <div className={`mt-4 text-sm ${uploadStatus.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+          {uploadStatus}
+        </div>
+      )}
+      <h1 className="text-2xl font-bold mt-6 mb-6">Add New User</h1>
+      <form onSubmit={handleUserSubmit} className="space-y-4">
+        {/* <div>
+          <label htmlFor="username" className="block text-sm font-medium">
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={userData.username}
+            onChange={handleUserInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div> */}
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={userData.email}
+            onChange={handleUserInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium">
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={userData.password}
+            onChange={handleUserInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          onClick={() => setUserData({"email": "", "password": ""})}
+          className="bg-[#042449] text-white px-4 py-2 rounded shadow"
+        >
+          Add User
         </button>
       </form>
       {uploadStatus && (
