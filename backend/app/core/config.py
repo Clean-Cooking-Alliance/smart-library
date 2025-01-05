@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     PERPLEXITY_API_KEY: Optional[str] = None
     GOOGLE_SE_API_KEY: Optional[str] = None
     AUTOSAVE_DOCS: bool = False
+    MIN_RELEVANCE: Optional[float] = 0.5
     SE_ID: Optional[str] = None
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days

@@ -290,6 +290,22 @@ class SearchService:
                                     # for tag in self.resource_types:
                                     #     if self._calculate_distance(result['summary'], tag) >= 0.7:
                                     #         tags.append(Tag(name=tag, category='topic'))
+                                    
+                                    if hasattr(settings, 'AUTOSAVE_DOCS') and settings.AUTOSAVE_DOCS and hasattr(settings, 'MIN_RELEVANCE') and self._calculate_relevance_score(result['url']) >= settings.MIN_RELEVANCE:
+                                        document = Document(
+                                            title=result['title'],
+                                            summary=result['summary'],
+                                            source_url=result['url'],
+                                            created_at=datetime.now(),
+                                            updated_at=datetime.now(),
+                                            tags=tags
+                                        )
+                                        db = Session()
+                                        db.add(document)
+                                        db.commit()
+                                        db.refresh(document)
+                                        logger.info(f"Added document {document.title} to internal database.")
+                                        
                                     processed_results.append(ExternalSearchResult(
                                         title=result['title'],
                                         summary=result['summary'],
