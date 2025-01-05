@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 class SearchService:
     def __init__(self, csv_file_path: Optional[str] = None):
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.cache = TTLCache(maxsize=100, ttl=3600)
         self.whitelisted_domains = [
             'cleancookingalliance.org',
@@ -208,105 +207,106 @@ class SearchService:
         """Search external sources using Perplexity API."""
         try:
             logger.info(f"Starting external search for query: {query}")
-            if not hasattr(settings, 'PERPLEXITY_API_KEY') or not settings.PERPLEXITY_API_KEY:
-                logger.warning("Perplexity API key not configured, skipping external search")
-                return []
-            
-            async with aiohttp.ClientSession() as session:
-                headers = {
-                    "Authorization": f"Bearer {settings.PERPLEXITY_API_KEY}",
-                    "Content-Type": "application/json"
-                }
-
-                domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
-                enhanced_query = (
-                    f"Find research papers and articles about: {query}. "
-                    f"Only include results from these domains: {domain_filter}. "
-                    "Return the results as a JSON array with each item having fields: "
-                    "'title' (string), 'url' (string), and 'summary' (string of max 200 words)."
-                    "Do not include any markdown formatting or additional explanations."
-                )
-
-                payload = {
-                    "model": "llama-3.1-sonar-large-128k-online",
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": (
-                                "You are a research assistant specializing in clean cooking "
-                                "research. Only return results from reputable sources and "
-                                "format the response as a valid JSON array. Respond with ONLY the requested JSON array, no additional text or formatting."
-                            )
-                        },
-                        {
-                            "role": "user",
-                            "content": enhanced_query
-                        }
-                    ],
-                    "temperature": 0.1,
-                    "max_tokens": 1024
-                }
-
-                try:
-                    async with session.post(
-                        self.perplexity_url,
-                        headers=headers,
-                        json=payload,
-                        timeout=30
-                    ) as response:
-                        if response.status != 200:
-                            error_text = await response.text()
-                            logger.error(f"Perplexity API error: Status {response.status}, {error_text}")
-                            return []
-
-                        data = await response.json()
-                        content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
-                        json_content = self._extract_json_from_markdown(content)
-
-                        results = json.loads(json_content)
-                        processed_results = []
-
-                        for result in results[:limit]:
-                            if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
-                                tags = []
-                                for tag in self.regions:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='region'))
-                                for tag in self.technologies:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='technology'))
-                                for tag in self.topics:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='topic'))
-                                for tag in self.countries:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='country'))
-                                for tag in self.product_lifecycles:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='product_lifecycle'))
-                                for tag in self.customer_journies:
-                                    if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                        tags.append(Tag(name=tag, category='customer_journey'))
-                                # for tag in self.resource_types:
-                                #     if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                #         tags.append(Tag(name=tag, category='topic'))
-                                processed_results.append(ExternalSearchResult(
-                                    title=result['title'],
-                                    summary=result['summary'],
-                                    source_url=result['url'],
-                                    relevance_score=self._calculate_relevance_score(result['url']),
-                                    source="external",
-                                    tags=tags
-                                ))
-
-                        return processed_results
-
-                except asyncio.TimeoutError:
-                    logger.error("Perplexity API request timed out")
+            if settings.SEARCH_ENGINE == "perplexity":
+                if not hasattr(settings, 'PERPLEXITY_API_KEY') or not settings.PERPLEXITY_API_KEY:
+                    logger.warning("Perplexity API key not configured, skipping external search")
                     return []
-                except aiohttp.ClientError as e:
-                    logger.error(f"Perplexity API request failed: {str(e)}")
-                    return []
+                
+                async with aiohttp.ClientSession() as session:
+                    headers = {
+                        "Authorization": f"Bearer {settings.PERPLEXITY_API_KEY}",
+                        "Content-Type": "application/json"
+                    }
+
+                    domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
+                    enhanced_query = (
+                        f"Find research papers and articles about: {query}. "
+                        f"Only include results from these domains: {domain_filter}. "
+                        "Return the results as a JSON array with each item having fields: "
+                        "'title' (string), 'url' (string), and 'summary' (string of max 200 words)."
+                        "Do not include any markdown formatting or additional explanations."
+                    )
+
+                    payload = {
+                        "model": "llama-3.1-sonar-large-128k-online",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are a research assistant specializing in clean cooking "
+                                    "research. Only return results from reputable sources and "
+                                    "format the response as a valid JSON array. Respond with ONLY the requested JSON array, no additional text or formatting."
+                                )
+                            },
+                            {
+                                "role": "user",
+                                "content": enhanced_query
+                            }
+                        ],
+                        "temperature": 0.1,
+                        "max_tokens": 1024
+                    }
+
+                    try:
+                        async with session.post(
+                            self.perplexity_url,
+                            headers=headers,
+                            json=payload,
+                            timeout=30
+                        ) as response:
+                            if response.status != 200:
+                                error_text = await response.text()
+                                logger.error(f"Perplexity API error: Status {response.status}, {error_text}")
+                                return []
+
+                            data = await response.json()
+                            content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+                            json_content = self._extract_json_from_markdown(content)
+
+                            results = json.loads(json_content)
+                            processed_results = []
+
+                            for result in results[:limit]:
+                                if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
+                                    tags = []
+                                    for tag in self.regions:
+                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                            tags.append(Tag(name=tag, category='region'))
+                                    for tag in self.technologies:
+                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                            tags.append(Tag(name=tag, category='technology'))
+                                    for tag in self.topics:
+                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                            tags.append(Tag(name=tag, category='topic'))
+                                    for tag in self.countries:
+                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                            tags.append(Tag(name=tag, category='country'))
+                                    for tag in self.product_lifecycles:
+                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                            tags.append(Tag(name=tag, category='product_lifecycle'))
+                                    for tag in self.customer_journies:
+                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                            tags.append(Tag(name=tag, category='customer_journey'))
+                                    # for tag in self.resource_types:
+                                    #     if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                    #         tags.append(Tag(name=tag, category='topic'))
+                                    processed_results.append(ExternalSearchResult(
+                                        title=result['title'],
+                                        summary=result['summary'],
+                                        source_url=result['url'],
+                                        relevance_score=self._calculate_relevance_score(result['url']),
+                                        source="external",
+                                        tags=tags
+                                    ))
+
+                            return processed_results
+
+                    except asyncio.TimeoutError:
+                        logger.error("Perplexity API request timed out")
+                        return []
+                    except aiohttp.ClientError as e:
+                        logger.error(f"Perplexity API request failed: {str(e)}")
+                        return []
 
         except Exception as e:
             logger.error(f"External search error: {str(e)}")
@@ -335,7 +335,6 @@ class SearchService:
         return 0.5  # Base score for other domains not specifically categorized
 
     def _get_embedding(self, text: str) -> List[float]:
-        """Get embedding for text using OpenAI."""
         try:
             model = SentenceTransformer('thenlper/gte-small')
             embedding =  model.encode(text)

@@ -5,8 +5,12 @@ from typing import Optional
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Clean Cooking Library"
     DATABASE_URL: str
-    OPENAI_API_KEY: Optional[str] = None
+    SEARCH_ENGINE: str = "google"
+    # OPENAI_API_KEY: Optional[str] = None
     PERPLEXITY_API_KEY: Optional[str] = None
+    GOOGLE_SE_API_KEY: Optional[str] = None
+    AUTOSAVE_DOCS: bool = False
+    SE_ID: Optional[str] = None
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     CACHE_TIMEOUT: int = 60 * 60 * 24  # 24 hours cache
