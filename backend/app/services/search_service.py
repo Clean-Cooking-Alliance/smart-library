@@ -124,7 +124,7 @@ class SearchService:
             logger.info(f"Include external: {include_external}")
             if include_external:
                 try:
-                    external_results = await self._search_external(db, query, limit)
+                    external_results = await self._search_external(query, limit)
                     # Remove duplicate results
                     if external_results:
                         for result in external_results:
@@ -185,7 +185,6 @@ class SearchService:
 
     async def _search_external(
         self,
-        db: Session,
         query: str,
         limit: int
     ) -> List[ExternalSearchResult]:
