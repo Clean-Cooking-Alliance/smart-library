@@ -1,7 +1,7 @@
 // src/pages/ExplorePage.tsx
 import React from 'react';
 import { Map, Users, Calendar, Lightbulb } from 'lucide-react';
-import MapChart from "@/components/ui/MapChart"
+import MapChart from "@/components/ui/mapchart"
 import Diagram from '@/components/ui/customerlifecycleflow';
 import FlowDiagram from '@/components/ui/ecosystemmap';
 import LineCurve from '@/components/ui/productlifecycleline';
@@ -15,32 +15,32 @@ interface Framework {
   icon: React.ReactNode;
 }
 
-const frameworks: Framework[] = [
-  {
-    id: 'region',
-    title: 'By Region',
-    description: 'Explore research by geographic regions and countries',
-    icon: <Map className="w-6 h-6" />
-  },
-  {
-    id: 'customer-lifecycle',
-    title: 'By Customer Lifecycle',
-    description: 'Browse through different stages of customer journey',
-    icon: <Users className="w-6 h-6" />
-  },
-  {
-    id: 'product-lifecycle',
-    title: 'By Product Lifecycle',
-    description: 'Understand research across product development stages',
-    icon: <Calendar className="w-6 h-6" />
-  },
-  {
-    id: 'technology',
-    title: 'By Technology',
-    description: 'Explore different clean cooking technologies',
-    icon: <Lightbulb className="w-6 h-6" />
-  }
-];
+// const frameworks: Framework[] = [
+//   {
+//     id: 'region',
+//     title: 'By Region',
+//     description: 'Explore research by geographic regions and countries',
+//     icon: <Map className="w-6 h-6" />
+//   },
+//   {
+//     id: 'customer-lifecycle',
+//     title: 'By Customer Lifecycle',
+//     description: 'Browse through different stages of customer journey',
+//     icon: <Users className="w-6 h-6" />
+//   },
+//   {
+//     id: 'product-lifecycle',
+//     title: 'By Product Lifecycle',
+//     description: 'Understand research across product development stages',
+//     icon: <Calendar className="w-6 h-6" />
+//   },
+//   {
+//     id: 'technology',
+//     title: 'By Technology',
+//     description: 'Explore different clean cooking technologies',
+//     icon: <Lightbulb className="w-6 h-6" />
+//   }
+// ];
 
 export const ExplorePage: React.FC = () => {
   return (

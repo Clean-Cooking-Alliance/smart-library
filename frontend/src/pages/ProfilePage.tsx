@@ -1,7 +1,4 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
@@ -17,7 +14,7 @@ export const ProfilePage: React.FC = () => {
   };
 
   // Handle login form submission
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (username === correctCredentials.username && password === correctCredentials.password) {
       setIsAuthenticated(true);
@@ -62,6 +59,13 @@ export const ProfilePage: React.FC = () => {
     };
 
     console.log('Payload:', payload);
+    
+    interface AxiosError {
+      response?: {
+        data: any;
+      };
+      message: string;
+    }
 
     try {
       const response = await axios.post('http://localhost:8000/api/v1/documents/', payload, {
@@ -77,7 +81,10 @@ export const ProfilePage: React.FC = () => {
         resource_type: 'Academic Article', // Reset to default value
       });
     } catch (error) {
-      console.error('Axios error:', error.response ? error.response.data : error.message);
+      const axiosError = error as AxiosError;
+      console.error('Axios error:', 
+        axiosError.response ? axiosError.response.data : axiosError.message
+      );
       setUploadStatus('Failed to add document. Please try again.');
     }
   }
@@ -260,8 +267,14 @@ export const ProfilePage: React.FC = () => {
               //   cursor: "pointer",
               //   width: "100%",}}
               className="bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer w-full"
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
+              onMouseEnter={(e: React.MouseEvent<HTMLElement>) => {
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = "#0056b3";
+              }}
+              onMouseLeave={(e: React.MouseEvent<HTMLElement>) => {
+                const target = e.target as HTMLElement;
+                target.style.backgroundColor = "#007bff";
+              }}
             >
               Login
             </button>
