@@ -246,6 +246,7 @@ class SearchService:
                     "temperature": 0.1,
                     "max_tokens": 1024
                 }
+                logger.info(f"Request Payload size:", {len(json.dumps(payload).encode('utf-8'))}, "bytes")
 
                 try:
                     async with session.post(
@@ -260,6 +261,7 @@ class SearchService:
                             return []
 
                         data = await response.json()
+                        logger.info(f"Response Payload size:", {len(json.dumps(data).encode('utf-8'))}, "bytes")
                         content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
                         json_content = self._extract_json_from_markdown(content)
 

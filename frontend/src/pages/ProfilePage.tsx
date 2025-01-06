@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
@@ -105,6 +102,13 @@ export const ProfilePage: React.FC = () => {
     };
 
     console.log('Payload:', payload);
+    
+    interface AxiosError {
+      response?: {
+        data: any;
+      };
+      message: string;
+    }
 
     try {
       const response = await axios.post('http://localhost:8000/api/v1/documents/', payload, {
@@ -120,7 +124,10 @@ export const ProfilePage: React.FC = () => {
         resource_type: 'Academic Article', // Reset to default value
       });
     } catch (error) {
-      console.error('Axios error:', error.response ? error.response.data : error.message);
+      const axiosError = error as AxiosError;
+      console.error('Axios error:', 
+        axiosError.response ? axiosError.response.data : axiosError.message
+      );
       setUploadStatus('Failed to add document. Please try again.');
     }
   };
