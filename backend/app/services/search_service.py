@@ -16,7 +16,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from app.core.config import settings
-from app.models.document import Document
+from app.models.document import Document, WhitelistedDomain
 from app.schemas.search import (
     SearchResult,
     ExternalSearchResult,
@@ -34,15 +34,16 @@ class SearchService:
     def __init__(self, csv_file_path: Optional[str] = None):
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.cache = TTLCache(maxsize=100, ttl=3600)
-        self.whitelisted_domains = [
-            'cleancookingalliance.org',
-            'who.int',
-            'worldbank.org',
-            'seforall.org',
-            'mecs.org.uk',
-            'sciencedirect.com',
-            'mdpi.com'
-        ]
+        # self.whitelisted_domains = [
+        #     'cleancookingalliance.org',
+        #     'who.int',
+        #     'worldbank.org',
+        #     'seforall.org',
+        #     'mecs.org.uk',
+        #     'sciencedirect.com',
+        #     'mdpi.com'
+        # ]
+        self.whitelisted_domains = None
         self.perplexity_url = "https://api.perplexity.ai/chat/completions"
         self.index = None
         self.document_map = {}
@@ -122,6 +123,9 @@ class SearchService:
     ) -> CombinedSearchResponse:
         """Perform hybrid search across internal and external sources."""
         try:
+            self.whitelisted_domains = [domain.domain for domain in db.query(WhitelistedDomain).all()]
+            # print(self.whitelisted_domains)
+            
             logger.info(f"Starting search for query: {query}")
 
             # Internal search
