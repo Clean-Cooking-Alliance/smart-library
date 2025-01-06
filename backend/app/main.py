@@ -21,7 +21,7 @@ app.add_middleware(
 # Include API router
 app.include_router(api_router, prefix="/api/v1")
 
-@app.get("/healthcheck")
+@app.get("/health")
 def read_root():
     logger.info("Health check status check")
     return {"status": "healthy"}

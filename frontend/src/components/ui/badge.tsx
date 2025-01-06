@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/utils/utils';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'primary' | 'secondary' | 'region' | 'topic' | 'technology' | 'framework' | 'unknown';
+  variant?: 'primary' | 'secondary' | 'region' | 'topic' | 'technology' | 'framework' | 'country'| 'product_lifecycle' | 'unknown' | 'resource';
 }
 
 const Badge: React.FC<BadgeProps> = ({ variant = 'secondary', className, ...props }) => {
@@ -17,7 +17,8 @@ const Badge: React.FC<BadgeProps> = ({ variant = 'secondary', className, ...prop
     country: 'bg-indigo-100 text-indigo-800',
     product_lifecycle: 'bg-teal-100 text-teal-800',
     customer_journey: 'bg-pink-100 text-pink-800',
-    unknown: 'bg-gray-100 text-gray-800'
+    unknown: 'bg-gray-100 text-gray-800',
+    resource: 'bg-sky-150 text-sky-900'
   }[variant];
 
   return (

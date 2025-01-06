@@ -207,7 +207,7 @@ class SearchService:
         """Search external sources using Perplexity API."""
         try:
             logger.info(f"Starting external search for query: {query}")
-            if settings.SEARCH_ENGINE == "perplexity":
+            if settings.SEARCH_ENGINE.lower() == "perplexity":
                 if not hasattr(settings, 'PERPLEXITY_API_KEY') or not settings.PERPLEXITY_API_KEY:
                     logger.warning("Perplexity API key not configured, skipping external search")
                     return []

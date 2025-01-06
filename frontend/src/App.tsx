@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 
 function App() {
   const resetSearch = () => {
-    queryClient.invalidateQueries('search');
+    queryClient.invalidateQueries({ queryKey: ['search'] });
   }
   return (
     <QueryClientProvider client={queryClient}>

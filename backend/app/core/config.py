@@ -1,4 +1,5 @@
 import logging
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -19,8 +20,12 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
+logger = logging.getLogger(__name__)
+logger.info(f"env var: {os.environ.get('DATABASE_URL')}")
+
+logger.info(f"env var: {os.environ.get('DATABASE_URL')}")
 settings = Settings()
 
-logger = logging.getLogger(__name__)
+
 logger.info(f"PERPLEXITY_API_KEY configured: {bool(settings.PERPLEXITY_API_KEY)}")
 logger.info(f"All settings: {settings.dict()}") 
