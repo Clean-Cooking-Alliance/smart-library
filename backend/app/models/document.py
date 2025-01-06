@@ -52,3 +52,11 @@ class Document(Base):
     
     # Relationships
     tags = relationship("Tag", secondary=document_tags, back_populates="documents")
+
+
+class WhitelistedDomain(Base):
+    __tablename__ = "whitelisted_domain"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    domain = Column(String, unique=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
