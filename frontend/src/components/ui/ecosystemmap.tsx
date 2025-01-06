@@ -71,9 +71,9 @@ const FlowDiagram: React.FC<EcosystemMapProps> = ({ setSearchQuery }) => {
         zoomOnPinch={false}
         zoomOnDoubleClick={false}
         panOnScroll={false}
-        onNodeMouseEnter={(event, node) => setHoveredNodeId(node.id)}
+        onNodeMouseEnter={(_, node) => setHoveredNodeId(node.id)}
         onNodeMouseLeave={() => setHoveredNodeId(null)}
-        onNodeClick={(event, node) => handleStepClick(node.data.label)}
+        onNodeClick={(_, node) => handleStepClick(node.data.label)}
       />
     </div>
   );
