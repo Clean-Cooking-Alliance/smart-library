@@ -13,6 +13,7 @@ class DocumentBase(BaseModel):
 
 class DocumentCreate(DocumentBase):
     tags: Optional[List[Tag]] = []  # Tag names to be associated with the document
+    resource_type: Optional[ResourceType] = None
 
 class DocumentUpdate(DocumentBase):
     title: Optional[str] = None

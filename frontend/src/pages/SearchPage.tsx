@@ -32,7 +32,9 @@ interface InternalSearchResult extends BaseSearchResult {
   document_id: number;
 }
 
-interface ExternalSearchResult extends BaseSearchResult { }
+interface ExternalSearchResult extends BaseSearchResult {
+  autosaved: boolean;
+}
 
 interface CombinedSearchResponse {
   internal_results: InternalSearchResult[];
@@ -69,6 +71,20 @@ export const SearchPage: React.FC = () => {
     },
     enabled: !!searchQuery,
   });
+
+  React.useEffect(() => {
+    if (data) {
+      let titles: string[] = [];
+      data.external_results.forEach(result => {
+        if (result.autosaved) {
+          titles.push(result.title);
+        }
+      });
+      if (titles.length > 0) {
+        alert(`Documents with titles:\n${titles.join("\n")}\nhave been autosaved.`);
+      }
+    }
+  }, [data]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -154,7 +170,7 @@ export const SearchPage: React.FC = () => {
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <div className="flex justify-between">
                 <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-                {result.source === 'external' ? (
+                {result.source === 'external' && (import.meta.env.AUTOSAVE_DOCS ? import.meta.env.AUTOSAVE_DOCS.trim().lower() === 'false' : 'false') ? (
                   <button
                   className="bg-[#568d43] text-white text-xs px-2 py-2 rounded shadow"
                   onClick={() => saveExternalDocument(result as ExternalSearchResult)}
@@ -285,7 +301,7 @@ export const SearchPage: React.FC = () => {
               'Internal Library Results'
             )}
             {renderSearchResults(
-              isFrameworkQuery ? filterResultsByFramework(data.external_results, searchQuery) : data.external_results,
+              isFrameworkQuery ? filterResultsByFramework(data.external_results, searchQuery) : data.external_results.filter(result => !result.autosaved),
               'External Research Results'
             )}
             {!data.internal_results.length && !data.external_results.length && (
