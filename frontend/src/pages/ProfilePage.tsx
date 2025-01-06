@@ -251,6 +251,7 @@ export const ProfilePage: React.FC = () => {
           await axios.post(url, payload, { headers });
         }
         setUploadStatusFile(`${file.name} imported successfully.`);
+        alert(`${file.name}" imported successfully.`);
       } catch (error) {
         console.error(error);
         setUploadStatusFile(`Failed to import file. Please try again.`);
@@ -427,7 +428,7 @@ export const ProfilePage: React.FC = () => {
         <label htmlFor="file-input" className="ml-auto bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer">
           Choose File
         </label>
-        {isLoading && <div className="mt-4 text-sm text-blue-600">Loading...</div>}
+        {isLoading && <div className="mt-4 text-sm text-blue-600">Please stay on this page while the document is loading...</div>}
       </div>
       {uploadStatusFile && (
         <div className={`mt-4 text-sm ${uploadStatusFile.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
