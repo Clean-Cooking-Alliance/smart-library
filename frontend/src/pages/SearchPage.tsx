@@ -170,7 +170,7 @@ export const SearchPage: React.FC = () => {
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <div className="flex justify-between">
                 <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-                {result.source === 'external' && import.meta.env.AUTOSAVE_DOCS === 'false' ? (
+                {result.source === 'external' && (import.meta.env.AUTOSAVE_DOCS ? import.meta.env.AUTOSAVE_DOCS.trim().lower() === 'false' : 'false') ? (
                   <button
                   className="bg-[#568d43] text-white text-xs px-2 py-2 rounded shadow"
                   onClick={() => saveExternalDocument(result as ExternalSearchResult)}
