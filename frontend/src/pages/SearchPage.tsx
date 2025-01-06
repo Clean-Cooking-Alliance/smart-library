@@ -9,7 +9,6 @@ import MapChart from '../components/ui/mapchart';
 import Diagram from '../components/ui/customerlifecycleflow';
 import FlowDiagram from '../components/ui/ecosystemmap';
 import LineCurve from '../components/ui/productlifecycleline';
-import { Bookmark } from 'lucide-react';
 
 import '@xyflow/react/dist/style.css';
 

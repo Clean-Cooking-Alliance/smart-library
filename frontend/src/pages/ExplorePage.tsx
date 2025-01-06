@@ -1,6 +1,6 @@
 // src/pages/ExplorePage.tsx
 import React from 'react';
-import { Map, Users, Calendar, Lightbulb } from 'lucide-react';
+//import { Map, Users, Calendar, Lightbulb } from 'lucide-react';
 import MapChart from "@/components/ui/mapchart"
 import Diagram from '@/components/ui/customerlifecycleflow';
 import FlowDiagram from '@/components/ui/ecosystemmap';
@@ -8,12 +8,12 @@ import LineCurve from '@/components/ui/productlifecycleline';
 
 import '@xyflow/react/dist/style.css';
 
-interface Framework {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
+// interface Framework {
+//   id: string;
+//   title: string;
+//   description: string;
+//   icon: React.ReactNode;
+// }
 
 // const frameworks: Framework[] = [
 //   {
