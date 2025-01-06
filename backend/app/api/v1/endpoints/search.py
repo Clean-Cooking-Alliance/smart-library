@@ -6,6 +6,7 @@ from ....schemas import SearchQuery, CombinedSearchResponse
 from ....services.search_service import search_service
 from ....deps import get_db
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ async def search_documents(
             db=db,
             query=search_query.query,
             limit=search_query.limit or 10,
-            include_external=search_query.include_external
+            include_external=settings.INCLUDE_EXTERNAL,
         )
         
         return results

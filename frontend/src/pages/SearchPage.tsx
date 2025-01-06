@@ -32,7 +32,9 @@ interface InternalSearchResult extends BaseSearchResult {
   document_id: number;
 }
 
-interface ExternalSearchResult extends BaseSearchResult { }
+interface ExternalSearchResult extends BaseSearchResult {
+  autosaved: boolean;
+}
 
 interface CombinedSearchResponse {
   internal_results: InternalSearchResult[];
@@ -69,6 +71,20 @@ export const SearchPage: React.FC = () => {
     },
     enabled: !!searchQuery,
   });
+
+  React.useEffect(() => {
+    if (data) {
+      let titles: string[] = [];
+      data.external_results.forEach(result => {
+        if (result.autosaved) {
+          titles.push(result.title);
+        }
+      });
+      if (titles.length > 0) {
+        alert(`Documents with titles:\n${titles.join("\n")}\nhave been autosaved.`);
+      }
+    }
+  }, [data]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -285,7 +301,7 @@ export const SearchPage: React.FC = () => {
               'Internal Library Results'
             )}
             {renderSearchResults(
-              isFrameworkQuery ? filterResultsByFramework(data.external_results, searchQuery) : data.external_results,
+              isFrameworkQuery ? filterResultsByFramework(data.external_results, searchQuery) : data.external_results.filter(result => !result.autosaved),
               'External Research Results'
             )}
             {!data.internal_results.length && !data.external_results.length && (

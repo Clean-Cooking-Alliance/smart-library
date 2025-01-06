@@ -17,6 +17,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from ast import literal_eval
 
 from app.core.config import settings
+from app.models.tag import Tag as TagModel
 from app.models.document import Document, WhitelistedDomain
 from app.schemas.search import (
     SearchResult,
@@ -25,6 +26,7 @@ from app.schemas.search import (
     Tag,
     TagCategory
 )
+from app.schemas.document import DocumentCreate
 from ..crud import crud_document
 
 
@@ -92,42 +94,7 @@ class SearchService:
                     self.resource_types.add(row['Type of Resource'])
                     self.resource_types_embeddings[row['Type of Resource']] = literal_eval(row['Type of Resource_embedding'])
             logger.info("Loaded data from CSV") 
-            # print(self.regions)
-            # print(self.countries)
-            # print(self.topics)
-            # print(self.technologies)
-            # print(self.product_lifecycles)
-            # print(self.customer_journies)
-            # print(self.resource_types)
             
-    def initialize_faiss_index(self, db: Session):
-        """Initialize FAISS index with document embeddings from the database."""
-        try:
-            logger.info("Initializing FAISS index")
-            documents = db.query(Document).filter(Document.embedding.isnot(None)).all()
-            embeddings = []
-            ids = []
-            for doc in documents:
-                # Regenerate embedding if needed
-                if not doc.embedding:
-                    doc.embedding = self._get_embedding(self._create_metadata_text(doc))
-                    db.add(doc)
-                    db.commit()
-                embeddings.append(doc.embedding)
-                ids.append(doc.id)
-                self.document_map[doc.id] = doc
-            
-            if embeddings:
-                dimension = len(embeddings[0])
-                self.index = faiss.IndexFlatL2(dimension)
-                self.index.add(np.array(embeddings, dtype=np.float32))
-                logger.info(f"Added {len(embeddings)} documents to FAISS index")
-            else:
-                logger.warning("No document embeddings found in the database")
-        except Exception as e:
-            logger.error(f"Error initializing FAISS index: {e}")
-            logger.error(traceback.format_exc())
-
     async def search(
         self,
         db: Session,
@@ -154,18 +121,21 @@ class SearchService:
 
             # External search
             external_results = []
+            logger.info(f"Include external: {include_external}")
             if include_external:
                 try:
-                    external_results = await self._search_external(query, limit)
-                    logger.info(f"External search found {len(external_results)} results")
+                    external_results = await self._search_external(db, query, limit)
+                    # Remove duplicate results
+                    if external_results:
+                        for result in external_results:
+                            if result.source_url in urls:
+                                external_results.remove(result)
+                        logger.info(f"External search found {len(external_results)} results")
+                    else:
+                        logger.info("No new external search results found")
                 except Exception as e:
                     logger.error(f"External search error: {str(e)}")
             
-            # Remove duplicate results
-            for result in external_results:
-                if result.source_url in urls:
-                    external_results.remove(result)
-
             return CombinedSearchResponse(
                 internal_results=internal_results,
                 external_results=external_results
@@ -215,36 +185,31 @@ class SearchService:
 
     async def _search_external(
         self,
+        db: Session,
         query: str,
         limit: int
     ) -> List[ExternalSearchResult]:
-        
-        regions = {"Uganda", "Kenya", "Africa", "Asia", "Europe"}
-        # Add your technologies here
-        technologies = {"LPG", "Electric", "Biomass", "Solar"}
-        topics = {"Adoption", "Barriers", "Implementation", "Research"}
         """Search external sources using Perplexity API."""
         try:
             logger.info(f"Starting external search for query: {query}")
-            if settings.SEARCH_ENGINE.lower() == "perplexity":
-                if not hasattr(settings, 'PERPLEXITY_API_KEY') or not settings.PERPLEXITY_API_KEY:
-                    logger.warning("Perplexity API key not configured, skipping external search")
-                    return []
-                
-                async with aiohttp.ClientSession() as session:
-                    headers = {
-                        "Authorization": f"Bearer {settings.PERPLEXITY_API_KEY}",
-                        "Content-Type": "application/json"
-                    }
+            if not hasattr(settings, 'PERPLEXITY_API_KEY') or not settings.PERPLEXITY_API_KEY:
+                logger.warning("Perplexity API key not configured, skipping external search")
+                return []
+            
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "Authorization": f"Bearer {settings.PERPLEXITY_API_KEY}",
+                    "Content-Type": "application/json"
+                }
 
-                    domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
-                    enhanced_query = (
-                        f"Find research papers and articles about: {query}. "
-                        f"Only include results from these domains: {domain_filter}. "
-                        "Return the results as a JSON array with each item having fields: "
-                        "'title' (string), 'url' (string), and 'summary' (string of max 200 words)."
-                        "Do not include any markdown formatting or additional explanations."
-                    )
+                domain_filter = " ".join(f"site:{domain}" for domain in self.whitelisted_domains)
+                enhanced_query = (
+                    f"Find research papers and articles about: {query}. "
+                    f"Only include results from these domains: {domain_filter}. "
+                    "Return the results as a JSON array with each item having fields: "
+                    "'title' (string), 'url' (string), and 'summary' (string of max 200 words)."
+                    "Do not include any markdown formatting or additional explanations."
+                )
 
                 payload = {
                     "model": "llama-3.1-sonar-large-128k-online",
@@ -265,92 +230,121 @@ class SearchService:
                     "temperature": 0.1,
                     "max_tokens": 1024
                 }
-                #logger.info(f"Request Payload size:", {len(json.dumps(payload).encode('utf-8'))}, "bytes")
 
-                    try:
-                        async with session.post(
-                            self.perplexity_url,
-                            headers=headers,
-                            json=payload,
-                            timeout=30
-                        ) as response:
-                            if response.status != 200:
-                                error_text = await response.text()
-                                logger.error(f"Perplexity API error: Status {response.status}, {error_text}")
-                                return []
+                try:
+                    async with session.post(
+                        self.perplexity_url,
+                        headers=headers,
+                        json=payload,
+                        timeout=30
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            logger.error(f"Perplexity API error: Status {response.status}, {error_text}")
+                            return []
 
                         data = await response.json()
-                        #logger.info(f"Response Payload size:", {len(json.dumps(data).encode('utf-8'))}, "bytes")
                         content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
                         json_content = self._extract_json_from_markdown(content)
 
                         results = json.loads(json_content)
-                        print(results)
                         processed_results = []
+                        
+                        for result in results[:limit]:
+                            autosaving = hasattr(settings, 'AUTOSAVE_DOCS') and settings.AUTOSAVE_DOCS and hasattr(settings, 'MIN_RELEVANCE') and self._calculate_relevance_score(result['url']) >= settings.MIN_RELEVANCE
 
-                            for result in results[:limit]:
-    
-                            # if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
-                                    summary_vec = self._get_embedding(result['summary'])
+                            if autosaving and db.query(Document).filter_by(source_url=result['url']).first() is None:
+                                summary_vec = self._get_embedding(result['summary'])
                                 tags = []
-                                    for tag in self.regions:
-                                        if self._calculate_distance(summary_vec, self.regions_embeddings[tag]) >= 0.8:
-                                            tags.append(Tag(name=tag, category='region'))
-                                    for tag in self.technologies:
-                                        if self._calculate_distance(summary_vec, self.technologies_embeddings[tag]) >= 0.8:
-                                            tags.append(Tag(name=tag, category='technology'))
-                                    for tag in self.topics:
-                                        if self._calculate_distance(summary_vec, self.topics_embeddings[tag]) >= 0.8:
-                                            tags.append(Tag(name=tag, category='topic'))
-                                    for tag in self.countries:
-                                        if self._calculate_distance(summary_vec, self.countries_embeddings[tag]) >= 0.8:
-                                            tags.append(Tag(name=tag, category='country'))
-                                    for tag in self.product_lifecycles:
-                                        if self._calculate_distance(summary_vec, self.product_lifecycles_embeddings[tag]) >= 0.8:
-                                            tags.append(Tag(name=tag, category='product_lifecycle'))
-                                    for tag in self.customer_journies:
-                                        if self._calculate_distance(summary_vec, self.customer_journies_embeddings[tag]) >= 0.8:
-                                            tags.append(Tag(name=tag, category='customer_journey'))
-                                    # for tag in self.resource_types:
-                                    #     if self._calculate_distance(result['summary'], tag) >= 0.7:
-                                    #         tags.append(Tag(name=tag, category='topic'))
-                                    
-                                    if hasattr(settings, 'AUTOSAVE_DOCS') and settings.AUTOSAVE_DOCS and hasattr(settings, 'MIN_RELEVANCE') and self._calculate_relevance_score(result['url']) >= settings.MIN_RELEVANCE:
-                                        document = Document(
-                                            title=result['title'],
-                                            summary=result['summary'],
-                                            source_url=result['url'],
-                                            created_at=datetime.now(),
-                                            updated_at=datetime.now(),
-                                            tags=tags
-                                        )
-                                        db = Session()
-                                        db.add(document)
-                                        db.commit()
-                                        db.refresh(document)
-                                        logger.info(f"Added document {document.title} to internal database.")
-                                        
+                                for tag in self.regions:
+                                    if self._calculate_distance(summary_vec, self.regions_embeddings[tag]) >= 0.8:
+                                        tags.append(TagModel(name=tag, category='region'))
+                                for tag in self.technologies:
+                                    if self._calculate_distance(summary_vec, self.technologies_embeddings[tag]) >= 0.8:
+                                        tags.append(TagModel(name=tag, category='technology'))
+                                for tag in self.topics:
+                                    if self._calculate_distance(summary_vec, self.topics_embeddings[tag]) >= 0.8:
+                                        tags.append(TagModel(name=tag, category='topic'))
+                                for tag in self.countries:
+                                    if self._calculate_distance(summary_vec, self.countries_embeddings[tag]) >= 0.8:
+                                        tags.append(TagModel(name=tag, category='country'))
+                                for tag in self.product_lifecycles:
+                                    if self._calculate_distance(summary_vec, self.product_lifecycles_embeddings[tag]) >= 0.8:
+                                        tags.append(TagModel(name=tag, category='product_lifecycle'))
+                                for tag in self.customer_journies:
+                                    if self._calculate_distance(summary_vec, self.customer_journies_embeddings[tag]) >= 0.8:
+                                        tags.append(TagModel(name=tag, category='customer_journey'))
+
+                                document_create = DocumentCreate(
+                                    title=result['title'],
+                                    summary=result['summary'],
+                                    source_url=result['url'],
+                                    created_at=datetime.now(),
+                                    updated_at=datetime.now(),
+                                    tags=tags
+                                )   
+                                try:
+                                    document = crud_document.document.create(db=db, obj_in=document_create)
+                                    logger.info(f"Added document {document.title} to internal database instead of showing in external search.")
                                     processed_results.append(ExternalSearchResult(
                                         title=result['title'],
                                         summary=result['summary'],
                                         source_url=result['url'],
                                         relevance_score=self._calculate_relevance_score(result['url']),
                                         source="external",
-                                        tags=tags
+                                        tags=self._determine_tags(result),
+                                        autosaved=True
                                     ))
+                                except Exception as e:
+                                    logger.error(f"Error saving document: {str(e)}")
+                                
+                            else:
+                                processed_results.append(ExternalSearchResult(
+                                    title=result['title'],
+                                    summary=result['summary'],
+                                    source_url=result['url'],
+                                    relevance_score=self._calculate_relevance_score(result['url']),
+                                    source="external",
+                                    tags=self._determine_tags(result),
+                                    autosaved=False
+                                ))
 
-                            return processed_results
+                        return processed_results
 
-                    except asyncio.TimeoutError:
-                        logger.error("Perplexity API request timed out")
-                        return []
-                    except aiohttp.ClientError as e:
-                        logger.error(f"Perplexity API request failed: {str(e)}")
-                        return []
+                except asyncio.TimeoutError:
+                    logger.error("Perplexity API request timed out")
+                    return []
+                except aiohttp.ClientError as e:
+                    logger.error(f"Perplexity API request failed: {str(e)}")
+                    return []
 
         except Exception as e:
             logger.error(f"External search error: {str(e)}")
             return []
+        
+    def _determine_tags(self, result) -> List[Tag]:
+        summary_vec = self._get_embedding(result['summary'])
+        tags = []
+        for tag in self.regions:
+            if self._calculate_distance(summary_vec, self.regions_embeddings[tag]) >= 0.8:
+                tags.append(Tag(name=tag, category='region'))
+        for tag in self.technologies:
+            if self._calculate_distance(summary_vec, self.technologies_embeddings[tag]) >= 0.8:
+                tags.append(Tag(name=tag, category='technology'))
+        for tag in self.topics:
+            if self._calculate_distance(summary_vec, self.topics_embeddings[tag]) >= 0.8:
+                tags.append(Tag(name=tag, category='topic'))
+        for tag in self.countries:
+            if self._calculate_distance(summary_vec, self.countries_embeddings[tag]) >= 0.8:
+                tags.append(Tag(name=tag, category='country'))
+        for tag in self.product_lifecycles:
+            if self._calculate_distance(summary_vec, self.product_lifecycles_embeddings[tag]) >= 0.8:
+                tags.append(Tag(name=tag, category='product_lifecycle'))
+        for tag in self.customer_journies:
+            if self._calculate_distance(summary_vec, self.customer_journies_embeddings[tag]) >= 0.8:
+                tags.append(Tag(name=tag, category='customer_journey'))
+        
+        return tags             
         
     def _calculate_relevance_score(self, url: str) -> float:
         """Calculate relevance score based on domain presence in whitelist and content quality."""

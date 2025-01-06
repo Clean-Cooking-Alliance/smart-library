@@ -43,6 +43,7 @@ class SearchResult(BaseSearchResult):
 
 class ExternalSearchResult(BaseSearchResult):
     tags: List[Tag] = []
+    autosaved: bool = False
     pass
 
 class CombinedSearchResponse(BaseModel):
