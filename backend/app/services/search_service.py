@@ -14,9 +14,10 @@ import numpy as np
 import traceback
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from ast import literal_eval
 
 from app.core.config import settings
-from app.models.document import Document
+from app.models.document import Document, WhitelistedDomain
 from app.schemas.search import (
     SearchResult,
     ExternalSearchResult,
@@ -33,15 +34,16 @@ logger = logging.getLogger(__name__)
 class SearchService:
     def __init__(self, csv_file_path: Optional[str] = None):
         self.cache = TTLCache(maxsize=100, ttl=3600)
-        self.whitelisted_domains = [
-            'cleancookingalliance.org',
-            'who.int',
-            'worldbank.org',
-            'seforall.org',
-            'mecs.org.uk',
-            'sciencedirect.com',
-            'mdpi.com'
-        ]
+        # self.whitelisted_domains = [
+        #     'cleancookingalliance.org',
+        #     'who.int',
+        #     'worldbank.org',
+        #     'seforall.org',
+        #     'mecs.org.uk',
+        #     'sciencedirect.com',
+        #     'mdpi.com'
+        # ]
+        self.whitelisted_domains = None
         self.perplexity_url = "https://api.perplexity.ai/chat/completions"
         self.index = None
         self.document_map = {}
@@ -53,6 +55,13 @@ class SearchService:
         self.product_lifecycles = set()
         self.customer_journies = set()
         self.resource_types = set()
+        self.regions_embeddings = {}
+        self.technologies_embeddings = {}
+        self.topics_embeddings = {}
+        self.countries_embeddings = {}
+        self.product_lifecycles_embeddings = {}
+        self.customer_journies_embeddings = {}
+        self.resource_types_embeddings = {}
         self._load_data_from_csv()
     
     def _load_data_from_csv(self):
@@ -63,18 +72,25 @@ class SearchService:
                 # print(row)
                 if row['Region']:
                     self.regions.add(row['Region'])
+                    self.regions_embeddings[row['Region']] = literal_eval(row['Region_embedding'])
                 if row['Country']:
                     self.countries.add(row['Country'])
+                    self.countries_embeddings[row['Country']] = literal_eval(row['Country_embedding'])
                 if row['Topic']:
                     self.topics.add(row['Topic'])
+                    self.topics_embeddings[row['Topic']] = literal_eval(row['Topic_embedding'])
                 if row['Technology']:
                     self.technologies.add(row['Technology'])
+                    self.technologies_embeddings[row['Technology']] = literal_eval(row['Technology_embedding'])
                 if row['Product Lifecycle']:
                     self.product_lifecycles.add(row['Product Lifecycle'])
+                    self.product_lifecycles_embeddings[row['Product Lifecycle']] = literal_eval(row['Product Lifecycle_embedding'])
                 if row['Customer Journey']:
                     self.customer_journies.add(row['Customer Journey'])
+                    self.customer_journies_embeddings[row['Customer Journey']] = literal_eval(row['Customer Journey_embedding'])
                 if row['Type of Resource']:
                     self.resource_types.add(row['Type of Resource'])
+                    self.resource_types_embeddings[row['Type of Resource']] = literal_eval(row['Type of Resource_embedding'])
             logger.info("Loaded data from CSV") 
             # print(self.regions)
             # print(self.countries)
@@ -121,6 +137,9 @@ class SearchService:
     ) -> CombinedSearchResponse:
         """Perform hybrid search across internal and external sources."""
         try:
+            self.whitelisted_domains = [domain.domain for domain in db.query(WhitelistedDomain).all()]
+            # print(self.whitelisted_domains)
+            
             logger.info(f"Starting search for query: {query}")
 
             # Internal search
@@ -227,25 +246,26 @@ class SearchService:
                         "Do not include any markdown formatting or additional explanations."
                     )
 
-                    payload = {
-                        "model": "llama-3.1-sonar-large-128k-online",
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": (
-                                    "You are a research assistant specializing in clean cooking "
-                                    "research. Only return results from reputable sources and "
-                                    "format the response as a valid JSON array. Respond with ONLY the requested JSON array, no additional text or formatting."
-                                )
-                            },
-                            {
-                                "role": "user",
-                                "content": enhanced_query
-                            }
-                        ],
-                        "temperature": 0.1,
-                        "max_tokens": 1024
-                    }
+                payload = {
+                    "model": "llama-3.1-sonar-large-128k-online",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are a research assistant specializing in clean cooking "
+                                "research. Only return results from reputable sources and "
+                                "format the response as a valid JSON array. Respond with ONLY the requested JSON array, no additional text or formatting."
+                            )
+                        },
+                        {
+                            "role": "user",
+                            "content": enhanced_query
+                        }
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 1024
+                }
+                #logger.info(f"Request Payload size:", {len(json.dumps(payload).encode('utf-8'))}, "bytes")
 
                     try:
                         async with session.post(
@@ -259,33 +279,37 @@ class SearchService:
                                 logger.error(f"Perplexity API error: Status {response.status}, {error_text}")
                                 return []
 
-                            data = await response.json()
-                            content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
-                            json_content = self._extract_json_from_markdown(content)
+                        data = await response.json()
+                        #logger.info(f"Response Payload size:", {len(json.dumps(data).encode('utf-8'))}, "bytes")
+                        content = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+                        json_content = self._extract_json_from_markdown(content)
 
-                            results = json.loads(json_content)
-                            processed_results = []
+                        results = json.loads(json_content)
+                        print(results)
+                        processed_results = []
 
                             for result in results[:limit]:
-                                if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
-                                    tags = []
+    
+                            # if any(domain in result['url'].lower() for domain in self.whitelisted_domains):
+                                    summary_vec = self._get_embedding(result['summary'])
+                                tags = []
                                     for tag in self.regions:
-                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        if self._calculate_distance(summary_vec, self.regions_embeddings[tag]) >= 0.8:
                                             tags.append(Tag(name=tag, category='region'))
                                     for tag in self.technologies:
-                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        if self._calculate_distance(summary_vec, self.technologies_embeddings[tag]) >= 0.8:
                                             tags.append(Tag(name=tag, category='technology'))
                                     for tag in self.topics:
-                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        if self._calculate_distance(summary_vec, self.topics_embeddings[tag]) >= 0.8:
                                             tags.append(Tag(name=tag, category='topic'))
                                     for tag in self.countries:
-                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        if self._calculate_distance(summary_vec, self.countries_embeddings[tag]) >= 0.8:
                                             tags.append(Tag(name=tag, category='country'))
                                     for tag in self.product_lifecycles:
-                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        if self._calculate_distance(summary_vec, self.product_lifecycles_embeddings[tag]) >= 0.8:
                                             tags.append(Tag(name=tag, category='product_lifecycle'))
                                     for tag in self.customer_journies:
-                                        if self._calculate_distance(result['summary'], tag) >= 0.7:
+                                        if self._calculate_distance(summary_vec, self.customer_journies_embeddings[tag]) >= 0.8:
                                             tags.append(Tag(name=tag, category='customer_journey'))
                                     # for tag in self.resource_types:
                                     #     if self._calculate_distance(result['summary'], tag) >= 0.7:
@@ -361,9 +385,7 @@ class SearchService:
             raise
 
     def _calculate_distance(self, summary, tag):
-        summary_vec = self._get_embedding(summary)
-        tag_vec = self._get_embedding(tag)
-        return cosine_similarity([summary_vec], [tag_vec])[0][0]
+        return cosine_similarity([summary], [tag])[0][0]
 
     def _create_metadata_text(self, document: Document) -> str:
         """Create a text representation of document metadata for embedding."""
