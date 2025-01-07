@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { SearchQuery, SearchResult, Document } from '../types';
+import { SearchQuery } from '../types/api';
+import { SearchResult, Document } from '../types/document';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 

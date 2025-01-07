@@ -1,15 +1,17 @@
 import React from 'react';
 import { Badge } from './badge';
+import { Tag } from '../../types/tag';
 
-interface Tag {
-  id: number;
-  name: string;
-  category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
-}
+// interface Tag {
+//   id: number;
+//   name: string;
+//   category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
+// }
 
 interface TagFilterProps {
   tags: Tag[];
   selectedTags: number[];
+  resourceTypes: string[];
   selectedResourceTypes: string[];
   onTagChange: (tagId: number) => void;
   onResourceTypeChange: (resourceType: string) => void;
