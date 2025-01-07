@@ -35,7 +35,7 @@ const MapChart: React.FC<MapChartProps> = ({ setSearchQuery }) => {
   return (
     <div style={{ width: "100%", height: "auto" }}>
       <Tooltip id="country" place="top"
-        render={({ content }: { content: string }) => (
+        render={({ content }: { content: string | null }) => (
           <span>
             {content}
             <br />
