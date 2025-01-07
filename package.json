@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@xyflow/react": "^12.3.6",
+    "react-flow": "^1.0.3",
+    "react-tooltip": "^5.28.0",
+    "xlsx": "^0.18.5"
+  }
+}

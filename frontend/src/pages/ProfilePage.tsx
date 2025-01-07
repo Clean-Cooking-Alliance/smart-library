@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 export const ProfilePage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,12 +24,12 @@ export const ProfilePage: React.FC = () => {
   }, []);
 
   // // Predefined username and password (for demonstration purposes)
-  const correctCredentials = {
-    username: "admin",
-    password: "secret123",
-  };
+  // const correctCredentials = {
+  //   username: "admin",
+  //   password: "secret123",
+  // };
 
-  const handleLoginSubmit = async (e) => {
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:8000/api/v1/users/login', {
@@ -164,7 +164,12 @@ export const ProfilePage: React.FC = () => {
 
       setIsAuthenticated(true);
     } catch (error) {
-      console.error('Axios error:', error.response ? error.response.data : error.message);
+      const axiosError = error as AxiosError;
+      console.error(
+        'Axios error:',
+        axiosError.response ? axiosError.response.data : axiosError.message
+      )
+      // console.error('Axios error:', (error as AxiosError).response ? (error as AxiosError).response.data : (error as AxiosError).message);
       setUploadStatus('Failed to add user. Please try again.');
     }
   };

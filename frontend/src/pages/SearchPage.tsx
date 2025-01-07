@@ -9,14 +9,15 @@ import MapChart from '../components/ui/mapchart';
 import Diagram from '../components/ui/customerlifecycleflow';
 import FlowDiagram from '../components/ui/ecosystemmap';
 import LineCurve from '../components/ui/productlifecycleline';
+import { Tag } from '../types/tag';
 
 import '@xyflow/react/dist/style.css';
 
-interface Tag {
-  id?: number;
-  name: string;
-  category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
-}
+// interface Tag {
+//   id?: number;
+//   name: string;
+//   category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
+// }
 
 interface BaseSearchResult {
   title: string;
@@ -229,11 +230,11 @@ export const SearchPage: React.FC = () => {
         <div className="w-full max-w-md mb-6">
           <SearchBar onSearch={handleSearch} isLoading={isLoading} />
         </div>
-        {error && (
+        {error ? (
           <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
             Error: {error instanceof Error ? error.message : 'An error occurred'}
           </div>
-        )}
+        ) : null}
         {isLoading && <div className="mt-4 text-gray-600">Searching...</div>}
       </div>
 
@@ -276,7 +277,7 @@ export const SearchPage: React.FC = () => {
                 tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map((tag) => tag.id))))
                   .map((id) =>
                     data.internal_results.flatMap((result) => result.tags).find((tag) => tag.id === id)
-                  ).filter((tag) => !isFrameworkQuery || tag?.name !== searchQuery)}
+                  ).filter((tag): tag is Tag => tag !== undefined && (!isFrameworkQuery || tag.name !== searchQuery))}
                 selectedTags={selectedTags}
                 onTagChange={handleTagChange}
                 resourceTypes={['Academic Article', 'News', 'Video', 'Podcast']}
