@@ -1,8 +1,16 @@
-# backend/app/initialize_tags.py
+# backend/app/initialize_db.py
 
 from sqlalchemy.orm import Session
+from app.crud.crud_user import user as crud_user
+from app.schemas.user import UserCreate
 from app.crud.crud_tag import tag as crud_tag
 from app.schemas.tag import TagCreate
+
+def initialize_user(db: Session):
+    user = crud_user.get_by_email(db, email="admin@example.com")
+    if not user:
+        user_in = UserCreate(email="admin@example.com",password="password")
+        crud_user.create(db, obj_in=user_in)
 
 def initialize_tags(db: Session):
     tags = [

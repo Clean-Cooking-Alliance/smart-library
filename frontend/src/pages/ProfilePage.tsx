@@ -23,12 +23,6 @@ export const ProfilePage: React.FC = () => {
     checkUsers();
   }, []);
 
-  // // Predefined username and password (for demonstration purposes)
-  // const correctCredentials = {
-  //   username: "admin",
-  //   password: "secret123",
-  // };
-
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -72,7 +66,8 @@ export const ProfilePage: React.FC = () => {
     password: '',
   });
 
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [documentUploadStatus, setDocumentUploadStatus] = useState<string | null>(null);
+  const [userUploadStatus, setUserUploadStatus] = useState<string | null>(null);
   const [uploadStatusFile, setUploadStatusFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -88,7 +83,7 @@ export const ProfilePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUploadStatus(null);
+    setDocumentUploadStatus(null);
 
     const tags = formData.tags.split(',').map((tag) => {
       const [name, category] = tag.split(':').map((str) => str.trim());
@@ -114,7 +109,7 @@ export const ProfilePage: React.FC = () => {
       const response = await axios.post('http://localhost:8000/api/v1/documents/', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
-      setUploadStatus(`Document added successfully: ${response.data.id}`);
+      setDocumentUploadStatus(`Document added successfully: ${response.data.id}`);
       setFormData({
         title: '',
         summary: '',
@@ -128,18 +123,13 @@ export const ProfilePage: React.FC = () => {
       console.error('Axios error:', 
         axiosError.response ? axiosError.response.data : axiosError.message
       );
-      setUploadStatus('Failed to add document. Please try again.');
+      setDocumentUploadStatus('Failed to add document. Please try again.');
     }
   };
 
   const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUploadStatus(null);
-
-    setUserData({
-      email: '',
-      password: '',
-    });
+    setUserUploadStatus(null);
 
     const payload = {
       ...userData,
@@ -149,7 +139,7 @@ export const ProfilePage: React.FC = () => {
       const response = await axios.post('http://localhost:8000/api/v1/users/', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
-      setUploadStatus(`User added successfully: ${response.data.id}`);
+      setUserUploadStatus(`User added successfully: ${response.data.id}`);
 
       console.log(userData);
 
@@ -169,8 +159,7 @@ export const ProfilePage: React.FC = () => {
         'Axios error:',
         axiosError.response ? axiosError.response.data : axiosError.message
       )
-      // console.error('Axios error:', (error as AxiosError).response ? (error as AxiosError).response.data : (error as AxiosError).message);
-      setUploadStatus('Failed to add user. Please try again.');
+      setUserUploadStatus('User already exists. Please try again.');
     }
   };
 
@@ -270,153 +259,72 @@ export const ProfilePage: React.FC = () => {
 
   // Render the login form if not authenticated
   if (!isAuthenticated) {
-    if (noUsers) {
-      return (
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+        }}
+      >
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100vh",
+            backgroundColor: "#ffffff",
+            borderRadius: "8px",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            padding: "20px",
+            width: "300px",
+            textAlign: "center",
           }}
         >
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "8px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              padding: "20px",
-              width: "300px",
-              textAlign: "center",
-            }}
-          >
-            <h1 className="text-2xl font-bold mb-3">Register to Access This Page</h1>
+          <h1 className="text-2xl font-bold mb-3">Log In to Access This Page</h1>
 
-            <form onSubmit={handleUserSubmit} className="space-y-4">
-              {/* <div>
-                <label htmlFor="username" className="block text-sm font-medium">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={userData.username}
-                  onChange={handleUserInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div> */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={userData.email}
-                  onChange={handleUserInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={userData.password}
-                  onChange={handleUserInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-[#042449] text-white px-4 py-2 rounded shadow"
-              >
-                Add User
-              </button>
-            </form>
-          </div>
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium">
+                Email
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer w-full"
+            >
+              Login
+            </button>
+          </form>
         </div>
-      );
-    }
-    else {
-      return (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100vh",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "8px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              padding: "20px",
-              width: "300px",
-              textAlign: "center",
-            }}
-          >
-            <h1 className="text-2xl font-bold mb-3">Log In to Access This Page</h1>
-
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium">
-                  Email
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-[#042449] text-white px-4 py-2 rounded shadow cursor-pointer w-full"
-              >
-                Login
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
+      </div>
+    );
   }
   return (
     <div className="container mx-auto py-6 px-4 flex-col max-w-6xl">
       <h1 className="text-2xl font-bold mb-6">User Profile</h1>
       <div className="mb-6">
-        {/* {console.log(userData.email)} */}
-        {/* <h2 className="text-xl font-semibold">John Doe</h2> */}
         <p className="text-gray-600">{localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData') as string)["email"] : ''}</p>
       </div>
       <hr></hr>
@@ -549,27 +457,13 @@ export const ProfilePage: React.FC = () => {
           Add Document
         </button>
       </form>
-      {uploadStatus && (
-        <div className={`mt-4 text-sm ${uploadStatus.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-          {uploadStatus}
+      {documentUploadStatus && (
+        <div className={`mt-4 text-sm ${documentUploadStatus.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+          {documentUploadStatus}
         </div>
       )}
       <h1 className="text-2xl font-bold mt-6 mb-6">Add New User</h1>
       <form onSubmit={handleUserSubmit} className="space-y-4">
-        {/* <div>
-          <label htmlFor="username" className="block text-sm font-medium">
-            Username
-          </label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={userData.username}
-            onChange={handleUserInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-            required
-          />
-        </div> */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium">
             Email
@@ -600,15 +494,14 @@ export const ProfilePage: React.FC = () => {
         </div>
         <button
           type="submit"
-          onClick={() => setUserData({"email": "", "password": ""})}
           className="bg-[#042449] text-white px-4 py-2 rounded shadow"
         >
           Add User
         </button>
       </form>
-      {uploadStatus && (
-        <div className={`mt-4 text-sm ${uploadStatus.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
-          {uploadStatus}
+      {userUploadStatus && (
+        <div className={`mt-4 text-sm ${userUploadStatus.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+          {userUploadStatus}
         </div>
       )}
     </div>

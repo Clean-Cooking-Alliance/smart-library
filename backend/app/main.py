@@ -6,7 +6,7 @@ from .api.v1.api import api_router
 import logging
 from sqlalchemy.orm import Session
 from .db.session import SessionLocal
-from .initialize_tags import initialize_tags
+from .initialize_db import initialize_tags, initialize_user
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ def on_startup():
     try:
         initialize_tags(db)
         logger.info("Tags initialized")
+        initialize_user(db)
+        logger.info("Admin user initialized")
     finally:
         db.close()
 
