@@ -1,5 +1,6 @@
 import logging
 from typing import List, Optional, Dict
+from app.crud import crud_tag
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.crud.base import CRUDBase
@@ -36,6 +37,49 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         else:
             return None
 
+    # def create(self, db: Session, *, obj_in: DocumentCreate) -> Document:
+    #     """Create a new document with tags and generate embedding."""
+    #     # Create document object from input data
+    #     logger.info(f"The obj_in for document create: {obj_in}")
+    #     db_obj = Document(
+    #         title=obj_in.title,
+    #         summary=obj_in.summary,
+    #         source_url=obj_in.source_url,
+    #         year_published=obj_in.year_published,
+    #         resource_type=obj_in.resource_type,  # Add resource_type
+    #     )
+
+    #     # Handle tags
+    #     if obj_in.tags:
+    #         tags = []
+    #         for tag_in in obj_in.tags:
+    #             # Get existing tag or create new one
+    #             if tag_in.name and tag_in.category:
+    #                 tag = db.query(Tag).filter(Tag.name == tag_in.name, Tag.category == tag_in.category).first()
+    #                 if not tag:
+    #                     # Guess category for new tag
+    #                     # category = self._guess_tag_category(tag_in.name)
+    #                     tag = Tag(name=tag_in.name, category=tag_in.category)
+    #                     logger.info(f"Creating new Tag: {tag}")            
+    #                     db.add(tag)
+    #                 tags.append(tag)
+    #         logger.info(f"The tags that are created: {tags}")
+    #         db_obj.tags = tags
+
+    #     # Generate and store embedding
+    #     metadata_text = self._create_metadata_text(db_obj)
+    #     try:
+    #         embedding = search_service._get_embedding(metadata_text)
+    #         db_obj.embedding = embedding
+    #     except Exception as e:
+    #         print(f"Warning: Failed to generate embedding: {str(e)}")
+    #         # Continue without embedding - it can be generated during search
+
+    #     db.add(db_obj)
+    #     db.commit()
+    #     db.refresh(db_obj)
+    #     return db_obj
+
     def create(self, db: Session, *, obj_in: DocumentCreate) -> Document:
         """Create a new document with tags and generate embedding."""
         # Create document object from input data
@@ -53,16 +97,14 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
             tags = []
             for tag_in in obj_in.tags:
                 # Get existing tag or create new one
-                if tag_in.name and tag_in.category:
-                    tag = db.query(Tag).filter(Tag.name == tag_in.name, Tag.category == tag_in.category).first()
-                    if not tag:
-                        # Guess category for new tag
-                        # category = self._guess_tag_category(tag_in.name)
-                        tag = Tag(name=tag_in.name, category=tag_in.category)
-                        logger.info(f"Creating new Tag: {tag}")            
-                        db.add(tag)
-                    tags.append(tag)
-            logger.info(f"The tags that are created: {tags}")
+                existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
+                if existing_tag:
+                    tags.append(existing_tag)
+                else:
+                    new_tag = Tag(name=tag_in.name, category=tag_in.category)
+                    db.add(new_tag)
+                    db.commit()
+                    tags.append(new_tag)
             db_obj.tags = tags
 
         # Generate and store embedding
@@ -78,7 +120,7 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         db.commit()
         db.refresh(db_obj)
         return db_obj
-
+    
     def update(
         self,
         db: Session,
