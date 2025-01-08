@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from '../components/search/SearchBar';
 import CollapsibleSummary from '../components/ui/collapsiblesummary';
 import TagFilter from '../components/ui/tagfilter';
@@ -12,12 +13,6 @@ import LineCurve from '../components/ui/productlifecycleline';
 import { Tag } from '../types/tag';
 
 import '@xyflow/react/dist/style.css';
-
-// interface Tag {
-//   id?: number;
-//   name: string;
-//   category: 'region' | 'topic' | 'technology' | 'framework' | 'country' | 'unknown';
-// }
 
 interface BaseSearchResult {
   title: string;
@@ -43,10 +38,13 @@ interface CombinedSearchResponse {
 }
 
 export const SearchPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
   const [selectedResourceTypes, setSelectedResourceTypes] = React.useState<string[]>([]);
   const [isFrameworkQuery, setIsFrameworkQuery] = React.useState(false);
+
+  const searchQuery = new URLSearchParams(location.search).get('query') || '';
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
@@ -62,8 +60,7 @@ export const SearchPage: React.FC = () => {
           }
         );
         return response.data;
-      }
-      else {
+      } else {
         const response = await axios.get<InternalSearchResult[]>(
           'http://localhost:8000/api/v1/documents/'
         );
@@ -88,14 +85,14 @@ export const SearchPage: React.FC = () => {
   }, [data]);
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    navigate(`/?query=${query}`);
     setSelectedTags([]);
     setSelectedResourceTypes([]);
     setIsFrameworkQuery(false);
   };
 
   const handleFrameworkClick = (frameworkName: string) => {
-    setSearchQuery(frameworkName);
+    navigate(`/?query=${frameworkName}`);
     setIsFrameworkQuery(true);
   };
 
