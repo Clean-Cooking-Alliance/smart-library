@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import axios, { AxiosError } from 'axios';
 
@@ -6,22 +6,6 @@ export const ProfilePage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [noUsers, setNoUsers] = useState(false);
-
-  useEffect(() => {
-    const checkUsers = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/v1/users/users');
-        if (response.data.length === 0) {
-          setNoUsers(true);
-        }
-      } catch (error) {
-        console.error('Error checking users:', error);
-      }
-    };
-
-    checkUsers();
-  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
