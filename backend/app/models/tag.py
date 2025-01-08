@@ -20,7 +20,7 @@ class Tag(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
-    category = Column(Enum(TagCategory), nullable=True, index=True)  # Made nullable for now
+    category = Column(Enum(TagCategory), nullable=True)  # Made nullable for now
     embedding = Column(Vector, nullable=True)
     
     # Relationships

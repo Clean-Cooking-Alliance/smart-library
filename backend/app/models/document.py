@@ -43,7 +43,7 @@ class Document(Base):
     title = Column(String, index=True)
     summary = Column(Text, nullable=True)
     content = Column(Text, nullable=True)
-    source_url = Column(String)
+    source_url = Column(String, unique=True)
     year_published = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
