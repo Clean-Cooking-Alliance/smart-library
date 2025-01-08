@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from enum import Enum
 
 class TagCategory(str, Enum):
@@ -15,6 +15,7 @@ class TagCategory(str, Enum):
 class TagBase(BaseModel):
     name: str
     category: Optional[TagCategory] = TagCategory.UNKNOWN
+    embedding: Optional[List[float]] = None
 
 class TagCreate(TagBase):
     pass

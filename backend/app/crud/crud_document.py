@@ -7,7 +7,7 @@ from app.crud.base import CRUDBase
 from app.models.document import Document, ResourceType
 from app.models.tag import Tag, TagCategory
 from app.schemas.document import DocumentCreate, DocumentUpdate
-from app.services.search_service import search_service 
+from app.services.search_service import search_service
 from sqlalchemy.sql import func
 from sqlalchemy.sql import text
 
@@ -95,17 +95,26 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         # Handle tags
         if obj_in.tags:
             tags = []
+            new_tags = []
             for tag_in in obj_in.tags:
-                # Get existing tag or create new one
                 existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
                 if existing_tag:
                     tags.append(existing_tag)
                 else:
-                    new_tag = Tag(name=tag_in.name, category=tag_in.category)
+                    new_tags.append(tag_in)
+
+            # Batch process new tags
+            if new_tags:
+                tag_names = [tag.name for tag in new_tags]
+                embeddings = [search_service._get_embedding(tag_name) for tag_name in tag_names]
+                for tag_in, embedding in zip(new_tags, embeddings):
+                    # logger.info(f"Generated embedding for tag '{tag_in.name}': {embedding}")
+                    new_tag = Tag(name=tag_in.name, category=tag_in.category, embedding=embedding)
                     db.add(new_tag)
                     db.commit()
                     tags.append(new_tag)
-            db_obj.tags = tags
+
+        db_obj.tags = tags
 
         # Generate and store embedding
         metadata_text = self._create_metadata_text(db_obj)

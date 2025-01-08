@@ -1,10 +1,16 @@
 # backend/app/initialize_db.py
 
+import logging
 from sqlalchemy.orm import Session
 from app.crud.crud_user import user as crud_user
 from app.schemas.user import UserCreate
 from app.crud.crud_tag import tag as crud_tag
 from app.schemas.tag import TagCreate
+
+from app.services.search_service import search_service
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def initialize_user(db: Session):
     user = crud_user.get_by_email(db, email="admin@example.com")
@@ -256,5 +262,8 @@ def initialize_tags(db: Session):
     for tag_data in tags:
         existing_tag = crud_tag.get_by_name(db, name=tag_data["name"])
         if not existing_tag:
-            tag_in = TagCreate(name=tag_data["name"], category=tag_data["category"].lower())
-            crud_tag.create(db, obj_in=tag_in)
+            if tag_data["name"]:
+                embedding = search_service._get_embedding(tag_data["name"])
+                tag_in = TagCreate(name=tag_data["name"], category=tag_data["category"].lower(), embedding=embedding)
+                # logger.info(f"Generated embedding for tag '{tag_data['name']}': {embedding}")            
+                crud_tag.create(db, obj_in=tag_in)

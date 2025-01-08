@@ -50,51 +50,7 @@ class SearchService:
         self.index = None
         self.document_map = {}
         self.csv_file_path = csv_file_path
-        self.regions = set()
-        self.technologies = set()
-        self.topics = set()
-        self.countries = set()
-        self.product_lifecycles = set()
-        self.customer_journies = set()
-        self.resource_types = set()
-        self.regions_embeddings = {}
-        self.technologies_embeddings = {}
-        self.topics_embeddings = {}
-        self.countries_embeddings = {}
-        self.product_lifecycles_embeddings = {}
-        self.customer_journies_embeddings = {}
-        self.resource_types_embeddings = {}
-        self._load_data_from_csv()
-    
-    def _load_data_from_csv(self):
-        with open(self.csv_file_path, mode='r', encoding='utf-8-sig') as csvfile:
-            reader = csv.DictReader(csvfile)
-            # print(reader.fieldnames)
-            for row in reader:
-                # print(row)
-                if row['Region']:
-                    self.regions.add(row['Region'])
-                    self.regions_embeddings[row['Region']] = literal_eval(row['Region_embedding'])
-                if row['Country']:
-                    self.countries.add(row['Country'])
-                    self.countries_embeddings[row['Country']] = literal_eval(row['Country_embedding'])
-                if row['Topic']:
-                    self.topics.add(row['Topic'])
-                    self.topics_embeddings[row['Topic']] = literal_eval(row['Topic_embedding'])
-                if row['Technology']:
-                    self.technologies.add(row['Technology'])
-                    self.technologies_embeddings[row['Technology']] = literal_eval(row['Technology_embedding'])
-                if row['Product Lifecycle']:
-                    self.product_lifecycles.add(row['Product Lifecycle'])
-                    self.product_lifecycles_embeddings[row['Product Lifecycle']] = literal_eval(row['Product Lifecycle_embedding'])
-                if row['Customer Journey']:
-                    self.customer_journies.add(row['Customer Journey'])
-                    self.customer_journies_embeddings[row['Customer Journey']] = literal_eval(row['Customer Journey_embedding'])
-                if row['Type of Resource']:
-                    self.resource_types.add(row['Type of Resource'])
-                    self.resource_types_embeddings[row['Type of Resource']] = literal_eval(row['Type of Resource_embedding'])
-            logger.info("Loaded data from CSV") 
-            
+        
     async def search(
         self,
         db: Session,
@@ -252,29 +208,13 @@ class SearchService:
                         
                         for result in results[:limit]:
                             autosaving = hasattr(settings, 'AUTOSAVE_DOCS') and settings.AUTOSAVE_DOCS and hasattr(settings, 'MIN_RELEVANCE') and self._calculate_relevance_score(result['url']) >= settings.MIN_RELEVANCE
-
+                            summary_vec = self._get_embedding(result['summary'])
+                            tags = []
+                            for tag in db.query(TagModel).all():
+                                if self._calculate_distance(summary_vec, tag.embedding) >= 0.8:
+                                    tags.append({"name": tag.name, "category": tag.category, "embedding": tag.embedding})
+                                        
                             if autosaving and db.query(Document).filter_by(source_url=result['url']).first() is None:
-                                summary_vec = self._get_embedding(result['summary'])
-                                tags = []
-                                for tag in self.regions:
-                                    if self._calculate_distance(summary_vec, self.regions_embeddings[tag]) >= 0.8:
-                                        tags.append(TagModel(name=tag, category='region'))
-                                for tag in self.technologies:
-                                    if self._calculate_distance(summary_vec, self.technologies_embeddings[tag]) >= 0.8:
-                                        tags.append(TagModel(name=tag, category='technology'))
-                                for tag in self.topics:
-                                    if self._calculate_distance(summary_vec, self.topics_embeddings[tag]) >= 0.8:
-                                        tags.append(TagModel(name=tag, category='topic'))
-                                for tag in self.countries:
-                                    if self._calculate_distance(summary_vec, self.countries_embeddings[tag]) >= 0.8:
-                                        tags.append(TagModel(name=tag, category='country'))
-                                for tag in self.product_lifecycles:
-                                    if self._calculate_distance(summary_vec, self.product_lifecycles_embeddings[tag]) >= 0.8:
-                                        tags.append(TagModel(name=tag, category='product_lifecycle'))
-                                for tag in self.customer_journies:
-                                    if self._calculate_distance(summary_vec, self.customer_journies_embeddings[tag]) >= 0.8:
-                                        tags.append(TagModel(name=tag, category='customer_journey'))
-
                                 document_create = DocumentCreate(
                                     title=result['title'],
                                     summary=result['summary'],
@@ -292,7 +232,7 @@ class SearchService:
                                         source_url=result['url'],
                                         relevance_score=self._calculate_relevance_score(result['url']),
                                         source="external",
-                                        tags=self._determine_tags(result),
+                                        tags=tags,
                                         autosaved=True
                                     ))
                                 except Exception as e:
@@ -305,7 +245,7 @@ class SearchService:
                                     source_url=result['url'],
                                     relevance_score=self._calculate_relevance_score(result['url']),
                                     source="external",
-                                    tags=self._determine_tags(result),
+                                    tags=tags,
                                     autosaved=False
                                 ))
 
@@ -322,29 +262,12 @@ class SearchService:
             logger.error(f"External search error: {str(e)}")
             return []
         
-    def _determine_tags(self, result) -> List[Tag]:
-        summary_vec = self._get_embedding(result['summary'])
-        tags = []
-        for tag in self.regions:
-            if self._calculate_distance(summary_vec, self.regions_embeddings[tag]) >= 0.8:
-                tags.append(Tag(name=tag, category='region'))
-        for tag in self.technologies:
-            if self._calculate_distance(summary_vec, self.technologies_embeddings[tag]) >= 0.8:
-                tags.append(Tag(name=tag, category='technology'))
-        for tag in self.topics:
-            if self._calculate_distance(summary_vec, self.topics_embeddings[tag]) >= 0.8:
-                tags.append(Tag(name=tag, category='topic'))
-        for tag in self.countries:
-            if self._calculate_distance(summary_vec, self.countries_embeddings[tag]) >= 0.8:
-                tags.append(Tag(name=tag, category='country'))
-        for tag in self.product_lifecycles:
-            if self._calculate_distance(summary_vec, self.product_lifecycles_embeddings[tag]) >= 0.8:
-                tags.append(Tag(name=tag, category='product_lifecycle'))
-        for tag in self.customer_journies:
-            if self._calculate_distance(summary_vec, self.customer_journies_embeddings[tag]) >= 0.8:
-                tags.append(Tag(name=tag, category='customer_journey'))
+    # def _determine_tags(self, result) -> List[Tag]:
+    #     for tag in db.query(TagModel).all():
+    #     if self._calculate_distance(summary_vec, tag.embedding) >= 0.8:
+    #         tags.append(tag)
         
-        return tags             
+    #     return tags             
         
     def _calculate_relevance_score(self, url: str) -> float:
         """Calculate relevance score based on domain presence in whitelist and content quality."""
@@ -403,4 +326,4 @@ class SearchService:
             return content.strip()
 
 
-search_service = SearchService('app/explore.csv')
+search_service = SearchService()
