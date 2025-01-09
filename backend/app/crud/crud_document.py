@@ -104,7 +104,8 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
                     if existing_tag:
                         tags.append(existing_tag)
                     else:
-                        new_tags.append(tag_in)
+                        if tag_in.name:
+                            new_tags.append(tag_in)
 
                 # Batch process new tags
                 if new_tags:
@@ -113,10 +114,11 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
                     for tag_in, embedding in zip(new_tags, embeddings):
                         # logger.info(f"Generated embedding for tag '{tag_in.name}': {embedding}")
                         try:
-                            new_tag = Tag(name=tag_in.name, category=tag_in.category, embedding=embedding)
-                            db.add(new_tag)
-                            db.commit()
-                            tags.append(new_tag)
+                            if tag_in.name:
+                                new_tag = Tag(name=tag_in.name, category=tag_in.category, embedding=embedding)
+                                db.add(new_tag)
+                                db.commit()
+                                tags.append(new_tag)
                         except IntegrityError:
                             db.rollback()
                             existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
