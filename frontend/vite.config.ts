@@ -25,7 +25,13 @@ export default defineConfig({
     }
   },
   build: {
-    sourcemap: true
+    sourcemap: true,
+    outDir: 'dist'
+  },
+  define: {
+    'process.env.VITE_API_URL': process.env.NODE_ENV === 'production' 
+      ? JSON.stringify('/api')  // Use relative path in production
+      : JSON.stringify('http://localhost:8000')  // Development URL
   },
   logLevel: 'info'
 })
