@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 from app.crud import crud_tag, crud_document
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy import asc, desc
 from app.crud.base import CRUDBase
 from app.models.document import Document, ResourceType
 from app.models.tag import Tag, TagCategory
@@ -92,7 +93,7 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
                 summary=obj_in.summary,
                 source_url=obj_in.source_url,
                 year_published=obj_in.year_published,
-                resource_type=obj_in.resource_type,  # Add resource_type
+                resource_type=obj_in.resource_type,
             )
 
             # Handle tags
@@ -158,15 +159,35 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
             setattr(db_obj, field, value)
 
         # Update tags if provided
-        if tags_data is not None:
+        if tags_data:
             tags = []
-            for tag_name in tags_data:
-                tag = db.query(Tag).filter(Tag.name == tag_name).first()
-                if not tag:
-                    category = self._guess_tag_category(tag_name)
-                    tag = Tag(name=tag_name, category=category)
-                    db.add(tag)
-                tags.append(tag)
+            new_tags = []
+            for tag_in in obj_in.tags:
+                existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
+                if existing_tag:
+                    tags.append(existing_tag)
+                else:
+                    if tag_in.name:
+                        new_tags.append(tag_in)
+
+            # Batch process new tags
+            if new_tags:
+                tag_names = [tag.name for tag in new_tags]
+                embeddings = [search_service._get_embedding(tag_name) for tag_name in tag_names]
+                for tag_in, embedding in zip(new_tags, embeddings):
+                    # logger.info(f"Generated embedding for tag '{tag_in.name}': {embedding}")
+                    try:
+                        if tag_in.name:
+                            new_tag = Tag(name=tag_in.name, category=tag_in.category, embedding=embedding)
+                            db.add(new_tag)
+                            db.commit()
+                            tags.append(new_tag)
+                    except IntegrityError:
+                        db.rollback()
+                        existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
+                        if existing_tag:
+                            tags.append(existing_tag)
+
             db_obj.tags = tags
 
         # Regenerate embedding since content changed
@@ -188,6 +209,8 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         *,
         skip: int = 0,
         limit: int = 100,
+        order: Optional[str] = "ASC",
+        sort: Optional[str] = "id",
         region: Optional[str] = None,
         topic: Optional[str] = None,
         year: Optional[int] = None,
@@ -195,6 +218,11 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         resource_type: Optional[ResourceType] = None
     ) -> List[Document]:
         query = db.query(self.model)
+        
+        if order.upper() == "ASC":
+            query = query.order_by(asc(getattr(Document, sort)))
+        else:
+            query = query.order_by(desc(getattr(Document, sort)))
 
         if region:
             query = query.join(Document.tags).filter(
@@ -289,5 +317,43 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
 
         results = query.all()
         return results
+    
+    def count(
+        self,
+        db: Session,
+        region: Optional[str] = None,
+        topic: Optional[str] = None,
+        year: Optional[int] = None,
+        search_term: Optional[str] = None,
+        resource_type: Optional[ResourceType] = None
+    ) -> int:
+        query = db.query(func.count(self.model.id))
+
+        if region:
+            query = query.join(Document.tags).filter(
+                Tag.name == region,
+                Tag.category == TagCategory.REGION
+            )
+
+        if topic:
+            query = query.join(Document.tags).filter(
+                Tag.name == topic,
+                Tag.category == TagCategory.TOPIC
+            )
+
+        if year:
+            query = query.filter(Document.year_published == year)
+
+        if search_term:
+            search_filter = or_(
+                Document.title.ilike(f"%{search_term}%"),
+                Document.summary.ilike(f"%{search_term}%")
+            )
+            query = query.filter(search_filter)
+
+        if resource_type:
+            query = query.filter(Document.resource_type == resource_type)
+
+        return query.scalar()
 
 document = CRUDDocument(Document)

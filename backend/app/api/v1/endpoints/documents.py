@@ -1,18 +1,23 @@
 from app.models.document import ResourceType
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ....schemas import Document, DocumentCreate, DocumentUpdate
 from ....crud import crud_document
 from ....deps import get_db
 
+from fastapi import Response
+
 router = APIRouter()
 
 @router.get("/", response_model=List[Document])
 def get_documents(
+    response: Response,
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
+    order: Optional[str] = Query("ASC", regex="^(ASC|DESC)$"),
+    sort: Optional[str] = "id",
     region: Optional[str] = None,
     topic: Optional[str] = None,
     year: Optional[int] = None,
@@ -33,12 +38,16 @@ def get_documents(
             db,
             skip=skip,
             limit=limit,
+            order=order,
+            sort=sort,
             region=region,
             topic=topic,
             year=year,
             search_term=search,
             resource_type=resource_type
         )
+        total_count = crud_document.count(db, region=region, topic=topic, year=year, search_term=search, resource_type=resource_type)
+        response.headers["X-Total-Count"] = str(total_count)
         return documents
     except Exception as e:
         raise HTTPException(

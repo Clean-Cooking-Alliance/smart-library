@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Any, List
@@ -48,12 +48,19 @@ def login(
         "token_type": "bearer",
     }
 
-@router.get("/users", response_model=List[User])
+@router.get("/", response_model=List[User])
 def get_users(
-    db: Session = Depends(get_db)
+    response: Response,
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    order: str = "ASC",
+    sort: str = "id"
 ) -> Any:
     """
-    Retrieve all users.
+    Retrieve all users with pagination.
     """
     users = crud_user.get_multi(db)
+    total_count = crud_user.count(db)
+    response.headers["X-Total-Count"] = str(total_count)
     return users

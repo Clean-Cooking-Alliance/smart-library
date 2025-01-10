@@ -100,7 +100,7 @@ export const ProfilePage: React.FC = () => {
         source_url: '',
         year_published: '',
         tags: '',
-        resource_type: 'Academic Article', // Reset to default value
+        resource_type: 'Academic Article',
       });
     } catch (error) {
       const axiosError = error as AxiosError;
@@ -205,13 +205,22 @@ export const ProfilePage: React.FC = () => {
             });
           }
 
+          console.log(
+            'Title:', row['Title'],
+            'Summary:', row['Summary'],
+            'Source URL:', row['Link'],
+            'Year Published:', parseInt(row['Year Published'], 10),
+            'Tags:', tags,
+            'Resource Type:', row['Type of Resource']
+          )
+
           return {
             title: row['Title'],
             summary: row['Summary'],
             source_url: row['Link'],
             year_published: parseInt(row['Year Published'], 10),
             tags: tags,
-            resource_type: null,
+            resource_type: row['Type of Resource'],
           };
         }
       };

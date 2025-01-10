@@ -1,0 +1,27 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "compilerOptions": {
+    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "test-admin/*": ["test-admin/*"]
+    }
+  },
+  "include": [
+
+    "src/**/*.ts",
+
+    "src/**/*.tsx",
+
+    "../../src/components/layout/Layout.tsx"
+
+  ]
+}

@@ -19,6 +19,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total-Count"],
 )
 
 # Include API router
@@ -33,6 +34,7 @@ def read_root():
 def on_startup():
     db: Session = SessionLocal()
     try:
+        logger.info("Starting to initialize tags")
         initialize_tags(db)
         logger.info("Tags initialized")
         initialize_user(db)
