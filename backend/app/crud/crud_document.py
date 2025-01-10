@@ -1,15 +1,17 @@
 import logging
 from typing import List, Optional, Dict
-from app.crud import crud_tag
+from app.crud import crud_tag, crud_document
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.crud.base import CRUDBase
 from app.models.document import Document, ResourceType
 from app.models.tag import Tag, TagCategory
 from app.schemas.document import DocumentCreate, DocumentUpdate
-from app.services.search_service import search_service 
+from app.services.search_service import search_service
 from sqlalchemy.sql import func
 from sqlalchemy.sql import text
+
+from sqlalchemy.exc import IntegrityError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,44 +84,62 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
 
     def create(self, db: Session, *, obj_in: DocumentCreate) -> Document:
         """Create a new document with tags and generate embedding."""
-        # Create document object from input data
         logger.info(f"The obj_in for document create: {obj_in}")
-        db_obj = Document(
-            title=obj_in.title,
-            summary=obj_in.summary,
-            source_url=obj_in.source_url,
-            year_published=obj_in.year_published,
-            resource_type=obj_in.resource_type,  # Add resource_type
-        )
+        existing_doc = self.get_by_title(db, title=obj_in.title)
+        if not existing_doc:
+            db_obj = Document(
+                title=obj_in.title,
+                summary=obj_in.summary,
+                source_url=obj_in.source_url,
+                year_published=obj_in.year_published,
+                resource_type=obj_in.resource_type,  # Add resource_type
+            )
 
-        # Handle tags
-        if obj_in.tags:
-            tags = []
-            for tag_in in obj_in.tags:
-                # Get existing tag or create new one
-                existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
-                if existing_tag:
-                    tags.append(existing_tag)
-                else:
-                    new_tag = Tag(name=tag_in.name, category=tag_in.category)
-                    db.add(new_tag)
-                    db.commit()
-                    tags.append(new_tag)
+            # Handle tags
+            if obj_in.tags:
+                tags = []
+                new_tags = []
+                for tag_in in obj_in.tags:
+                    existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
+                    if existing_tag:
+                        tags.append(existing_tag)
+                    else:
+                        if tag_in.name:
+                            new_tags.append(tag_in)
+
+                # Batch process new tags
+                if new_tags:
+                    tag_names = [tag.name for tag in new_tags]
+                    embeddings = [search_service._get_embedding(tag_name) for tag_name in tag_names]
+                    for tag_in, embedding in zip(new_tags, embeddings):
+                        # logger.info(f"Generated embedding for tag '{tag_in.name}': {embedding}")
+                        try:
+                            if tag_in.name:
+                                new_tag = Tag(name=tag_in.name, category=tag_in.category, embedding=embedding)
+                                db.add(new_tag)
+                                db.commit()
+                                tags.append(new_tag)
+                        except IntegrityError:
+                            db.rollback()
+                            existing_tag = crud_tag.tag.get_by_name(db, name=tag_in.name)
+                            if existing_tag:
+                                tags.append(existing_tag)
+
             db_obj.tags = tags
 
-        # Generate and store embedding
-        metadata_text = self._create_metadata_text(db_obj)
-        try:
-            embedding = search_service._get_embedding(metadata_text)
-            db_obj.embedding = embedding
-        except Exception as e:
-            print(f"Warning: Failed to generate embedding: {str(e)}")
-            # Continue without embedding - it can be generated during search
+            # Generate and store embedding
+            metadata_text = self._create_metadata_text(db_obj)
+            try:
+                embedding = search_service._get_embedding(metadata_text)
+                db_obj.embedding = embedding
+            except Exception as e:
+                print(f"Warning: Failed to generate embedding: {str(e)}")
+                # Continue without embedding - it can be generated during search
 
-        db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
-        return db_obj
+            db.add(db_obj)
+            db.commit()
+            db.refresh(db_obj)
+            return db_obj
     
     def update(
         self,
@@ -212,6 +232,10 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
             func.max(Document.year_published)
         ).first()
         return result[0] or 0, result[1] or 0
+    
+    def get_by_title(self, db: Session, *, title: str) -> Optional[Document]:
+        """Retrieve a document by its title."""
+        return db.query(Document).filter(Document.title == title).first()
     
     def _create_metadata_text(self, doc: Document) -> str:
         """Create a text representation of document metadata for embedding."""
