@@ -28,7 +28,8 @@ RUN npm install \
     react-simple-maps \
     xlsx \
     @xyflow/react \
-    react-tooltip
+    react-tooltip \
+    js-cookie
 
 # Copy the rest of the application code
 COPY . .

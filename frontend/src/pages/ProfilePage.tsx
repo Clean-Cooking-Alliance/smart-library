@@ -321,7 +321,7 @@ export const ProfilePage: React.FC = () => {
       <div className="mb-6">
         <p className="text-gray-600">{username}</p>
       </div>
-      <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded shadow">
+      <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 mb-4 rounded shadow">
         Logout
       </button>
       <hr></hr>

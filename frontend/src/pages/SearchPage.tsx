@@ -11,6 +11,7 @@ import Diagram from '../components/ui/customerlifecycleflow';
 import FlowDiagram from '../components/ui/ecosystemmap';
 import LineCurve from '../components/ui/productlifecycleline';
 import { Tag } from '../types/tag';
+import Cookies from 'js-cookie';
 
 import '@xyflow/react/dist/style.css';
 
@@ -43,13 +44,23 @@ export const SearchPage: React.FC = () => {
   const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
   const [selectedResourceTypes, setSelectedResourceTypes] = React.useState<string[]>([]);
   const [isFrameworkQuery, setIsFrameworkQuery] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  React.useEffect(() => {
+    const token = Cookies.get('sessionToken');
+    const savedUsername = Cookies.get('username');
+    if (token && savedUsername) {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const searchQuery = new URLSearchParams(location.search).get('query') || '';
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['search', searchQuery],
     queryFn: async () => {
       if (!searchQuery) return null;
+      console.log(`Making query for: ${searchQuery}`);
       if (!isFrameworkQuery) {
         const response = await axios.post<CombinedSearchResponse>(
           'http://localhost:8000/api/v1/search/',
@@ -68,12 +79,14 @@ export const SearchPage: React.FC = () => {
       }
     },
     enabled: !!searchQuery,
+    refetchInterval: 30000,
   });
 
   React.useEffect(() => {
     if (data) {
       let titles: string[] = [];
       data.external_results.forEach(result => {
+        console.log(result)
         if (result.autosaved) {
           titles.push(result.title);
         }
@@ -83,6 +96,12 @@ export const SearchPage: React.FC = () => {
       }
     }
   }, [data]);
+
+  React.useEffect(() => {
+    if (searchQuery) {
+      refetch();
+    }
+  }, [searchQuery, refetch]);
 
   const handleSearch = (query: string) => {
     navigate(`/?query=${query}`);
@@ -151,6 +170,7 @@ export const SearchPage: React.FC = () => {
     try {
       const response = await axios.post('http://localhost:8000/api/v1/documents/', payload);
       console.log('Document saved:', response.data);
+      alert(`${document.title} saved successfully!`);
     } catch (error) {
       console.error('Error saving document:', error);
     }
@@ -168,7 +188,7 @@ export const SearchPage: React.FC = () => {
             <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
               <div className="flex justify-between">
                 <h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-                {result.source === 'external' && (import.meta.env.AUTOSAVE_DOCS ? import.meta.env.AUTOSAVE_DOCS.trim().lower() === 'false' : 'false') ? (
+                {isAuthenticated && result.source === 'external' && (import.meta.env.AUTOSAVE_DOCS ? import.meta.env.AUTOSAVE_DOCS.trim().lower() === 'false' : 'false') ? (
                   <button
                   className="bg-[#568d43] text-white text-xs px-2 py-2 rounded shadow"
                   onClick={() => saveExternalDocument(result as ExternalSearchResult)}
