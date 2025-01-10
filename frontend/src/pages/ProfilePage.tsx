@@ -1,11 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import axios, { AxiosError } from 'axios';
+import Cookies from 'js-cookie';
 
 export const ProfilePage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    const token = Cookies.get('sessionToken');
+    const savedUsername = Cookies.get('username');
+    if (token && savedUsername) {
+      setIsAuthenticated(true);
+      setUsername(savedUsername);
+    }
+  }, []);
 
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -19,21 +29,23 @@ export const ProfilePage: React.FC = () => {
         },
       });
 
-      console.log(username, password);
-
       if (response.data.access_token) {
+        Cookies.set('sessionToken', response.data.access_token, { expires: 1 });
+        Cookies.set('username', username, { expires: 1 });
         setIsAuthenticated(true);
+      } else {
+        alert("Login failed. Please try again.");
       }
-
-      localStorage.setItem('userData', JSON.stringify({"email": username, "password": password}));
-
-      setUserData({
-        email: '',
-        password: '',
-      })
     } catch (error) {
       alert("Incorrect username or password");
     }
+  };
+
+  const handleLogout = () => {
+    Cookies.remove('sessionToken');
+    Cookies.remove('username');
+    setIsAuthenticated(false);
+    setUsername("");
   };
 
   const [formData, setFormData] = useState({
@@ -128,8 +140,6 @@ export const ProfilePage: React.FC = () => {
       console.log(userData);
 
       if (!isAuthenticated) {
-        localStorage.setItem('userData', JSON.stringify(userData));
-
         setUserData({
           email: '',
           password: '',
@@ -309,8 +319,11 @@ export const ProfilePage: React.FC = () => {
     <div className="container mx-auto py-6 px-4 flex-col max-w-6xl">
       <h1 className="text-2xl font-bold mb-6">User Profile</h1>
       <div className="mb-6">
-        <p className="text-gray-600">{localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData') as string)["email"] : ''}</p>
+        <p className="text-gray-600">{username}</p>
       </div>
+      <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded shadow">
+        Logout
+      </button>
       <hr></hr>
       <h1 className="text-2xl font-bold mt-6 mb-6">Add New Document(s)</h1>
       <h2 className="text-xl font-bold mt-6 mb-4">Import From an Excel File</h2>
