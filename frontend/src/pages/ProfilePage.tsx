@@ -8,6 +8,15 @@ export const ProfilePage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const API_URL = import.meta.env.VITE_API_URL || '';
+
+  const api = axios.create({
+      baseURL: API_URL,
+      headers: {
+          'Content-Type': 'application/json',
+      },
+  });
+
   useEffect(() => {
     const token = Cookies.get('sessionToken');
     const savedUsername = Cookies.get('username');
@@ -20,7 +29,7 @@ export const ProfilePage: React.FC = () => {
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/users/login', {
+      const response = await api.post('/api/v1/users/login', {
         username,
         password,
       }, {
@@ -102,7 +111,7 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/documents/', payload, {
+      const response = await api.post('/api/v1/documents/', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
       setDocumentUploadStatus(`Document added successfully: ${response.data.id}`);
@@ -132,7 +141,7 @@ export const ProfilePage: React.FC = () => {
     };
 
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/users/', payload, {
+      const response = await api.post('/api/v1/users/', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
       setUserUploadStatus(`User added successfully: ${response.data.id}`);
@@ -228,7 +237,7 @@ export const ProfilePage: React.FC = () => {
 
       const jsonPayloads = jsonData.map(createJson);
 
-      const url = 'http://localhost:8000/api/v1/documents/';
+      const url = '/api/v1/documents/';
       const headers = {
         'accept': 'application/json',
         'Content-Type': 'application/json'
@@ -236,7 +245,7 @@ export const ProfilePage: React.FC = () => {
 
       try {
         for (const payload of jsonPayloads) {
-          await axios.post(url, payload, { headers });
+          await api.post(url, payload, { headers });
         }
         setUploadStatusFile(`${file.name} imported successfully.`);
         alert(`${file.name}" imported successfully.`);

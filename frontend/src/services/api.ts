@@ -2,7 +2,7 @@ import axios from 'axios';
 import { SearchQuery } from '../types/api';
 import { SearchResult, Document } from '../types/document';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
     baseURL: API_URL,

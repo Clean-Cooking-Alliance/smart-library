@@ -1,7 +1,7 @@
 """Fill whitelisted domain table
 
-Revision ID: 9ea8752fcf9c
-Revises: a9e6befbf093
+Revision ID: 008
+Revises: 007
 Create Date: 2025-01-10 22:08:26.151550
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '9ea8752fcf9c'
-down_revision = 'a9e6befbf093'
+revision = '008'
+down_revision = '007'
 branch_labels = None
 depends_on = None
 

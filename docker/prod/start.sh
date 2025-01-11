@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start serving the frontend in the background
-serve -s /app/static -l 3000 &
+# serve -s /app/static -l 3000 &
 
 # Run database migrations
 alembic upgrade head

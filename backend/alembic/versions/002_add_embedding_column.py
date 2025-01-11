@@ -1,7 +1,7 @@
 """add embedding column
 
-Revision ID: add_embedding_column
-Revises: initial_migration
+Revision ID: 002
+Revises: 001
 Create Date: 2023-11-18 00:00:00.000000
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from pgvector.sqlalchemy import Vector
 
 # revision identifiers, used by Alembic.
-revision = 'add_embedding_column'
-down_revision = 'initial_migration'
+revision = '002'
+down_revision = '001'
 branch_labels = None
 depends_on = None
 

@@ -62,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, resetSearch }) => {
 
   //     const jsonPayloads = jsonData.map(createJson);
 
-  //     const url = 'http://localhost:8000/api/v1/documents/';
+  //     const url = '/api/v1/documents/';
   //     const headers = {
   //       'accept': 'application/json',
   //       'Content-Type': 'application/json'

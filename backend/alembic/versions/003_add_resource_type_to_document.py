@@ -1,7 +1,7 @@
 """Add resource_type to Document
 
-Revision ID: 8f0eb18e9849
-Revises: add_embedding_column
+Revision ID: 003
+Revises: 002
 Create Date: 2024-12-30 00:36:32.036099
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8f0eb18e9849'
-down_revision = 'add_embedding_column'
+revision = '003'
+down_revision = '002'
 branch_labels = None
 depends_on = None
 

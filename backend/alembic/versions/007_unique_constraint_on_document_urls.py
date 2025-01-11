@@ -1,7 +1,7 @@
 """Unique constraint on document urls
 
-Revision ID: a9e6befbf093
-Revises: 033e46fac35c
+Revision ID: 007
+Revises: 006
 Create Date: 2025-01-08 22:27:39.271772
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a9e6befbf093'
-down_revision = '033e46fac35c'
+revision = '007'
+down_revision = '006'
 branch_labels = None
 depends_on = None
 

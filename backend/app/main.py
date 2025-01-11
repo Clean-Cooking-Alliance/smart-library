@@ -1,5 +1,6 @@
 # backend/app/main.py
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .api.v1.api import api_router
@@ -15,7 +16,7 @@ app = FastAPI(title="Clean Cooking Library API")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,6 +24,8 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router, prefix="/api/v1")
+
+app.mount("/", StaticFiles(directory="/app/static", html=True), name="static")
 
 @app.get("/health")
 def read_root():

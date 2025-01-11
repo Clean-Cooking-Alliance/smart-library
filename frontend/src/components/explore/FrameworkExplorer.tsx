@@ -18,13 +18,22 @@ interface Document {
   }>;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+const api = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
 export const FrameworkExplorer: React.FC = () => {
   const { framework } = useParams<{ framework: string }>();
   const navigate = useNavigate();
   const { data: documents, isLoading } = useQuery({
     queryKey: ['framework', framework],
     queryFn: async () => {
-      const response = await axios.get(`http://localhost:8000/api/v1/documents/framework/${framework}`);
+      const response = await api.get(`/api/v1/documents/framework/${framework}`);
       return response.data as Document[];
     }
   });

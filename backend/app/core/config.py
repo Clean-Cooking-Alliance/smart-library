@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     AUTOSAVE_DOCS: bool = False
     MIN_RELEVANCE: Optional[float] = 0.5
     
-    JWT_SECRET: str
+    JWT_SECRET: Optional[str] = None
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     CACHE_TIMEOUT: int = 60 * 60 * 24  # 24 hours cache
 

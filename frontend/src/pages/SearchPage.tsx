@@ -54,6 +54,14 @@ export const SearchPage: React.FC = () => {
     }
   }, []);
 
+  const API_URL = import.meta.env.VITE_API_URL || '';
+  const api = axios.create({
+      baseURL: API_URL,
+      headers: {
+          'Content-Type': 'application/json',
+      },
+  });
+
   const searchQuery = new URLSearchParams(location.search).get('query') || '';
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -62,8 +70,8 @@ export const SearchPage: React.FC = () => {
       if (!searchQuery) return null;
       console.log(`Making query for: ${searchQuery}`);
       if (!isFrameworkQuery) {
-        const response = await axios.post<CombinedSearchResponse>(
-          'http://localhost:8000/api/v1/search/',
+        const response = await api.post<CombinedSearchResponse>(
+          '/api/v1/search/',
           {
             query: searchQuery,
             limit: 10,
@@ -72,8 +80,8 @@ export const SearchPage: React.FC = () => {
         );
         return response.data;
       } else {
-        const response = await axios.get<InternalSearchResult[]>(
-          'http://localhost:8000/api/v1/documents/'
+        const response = await api.get<InternalSearchResult[]>(
+          '/api/v1/documents/'
         );
         return { internal_results: response.data, external_results: [] };
       }
@@ -168,7 +176,7 @@ export const SearchPage: React.FC = () => {
     }
     console.log(payload);
     try {
-      const response = await axios.post('http://localhost:8000/api/v1/documents/', payload);
+      const response = await api.post('/api/v1/documents/', payload);
       console.log('Document saved:', response.data);
       alert(`${document.title} saved successfully!`);
     } catch (error) {

@@ -1,7 +1,7 @@
 """Insert embeddings for tags in db
 
-Revision ID: 033e46fac35c
-Revises: bdc2e161d9af
+Revision ID: 006
+Revises: 005
 Create Date: 2025-01-08 19:50:53.959308
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 import pgvector
 
 # revision identifiers, used by Alembic.
-revision = '033e46fac35c'
-down_revision = 'bdc2e161d9af'
+revision = '006'
+down_revision = '005'
 branch_labels = None
 depends_on = None
 

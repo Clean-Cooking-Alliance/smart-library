@@ -1,7 +1,7 @@
 """Added tag categories
 
-Revision ID: 978f296a47c3
-Revises: 8f0eb18e9849
+Revision ID: 004
+Revises: 003
 Create Date: 2024-12-31 20:43:20.565881
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '978f296a47c3'
-down_revision = '8f0eb18e9849'
+revision = '004'
+down_revision = '003'
 branch_labels = None
 depends_on = None
 

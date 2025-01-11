@@ -14,17 +14,17 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install Node.js and npm for serving frontend
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
-    && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y \
+#     nodejs \
+#     npm \
+#     && rm -rf /var/lib/apt/lists/*
 
 # Copy backend requirements and install dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install serve for frontend
-RUN npm install -g serve
+# RUN npm install -g serve
 
 # Copy backend code
 COPY backend/ .
@@ -38,6 +38,6 @@ RUN chmod +x /app/start.sh
 
 ENV PYTHONPATH=/app
 
-EXPOSE 8000 3000
+EXPOSE 8000
 
 CMD ["/app/start.sh"]
