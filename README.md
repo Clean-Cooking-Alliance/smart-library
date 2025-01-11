@@ -153,6 +153,43 @@ docker-compose exec backend bash
 
 # Frontend shell
 docker-compose exec frontend sh
+
+# In Production version, both frontend and backend are combined into a single docker image. This can be run in the following ways:
+## Using Dcoker compose:
+docker-compose -f docker-compose.prod.yml down (use -v to remove the db volume if needed - not encourgaed as alembic should be incremental to support any db changes)
+docker-compose -f docker-compose.prod.yml build
+docker-compose -f docker-compose.prod.yml up
+
+## Using docker run command:
+docker-compose -f docker-compose.prod.yml build
+
+### start the database image
+docker run -d \
+  --name cleandb \
+  -p 5432:5432 \
+  -e POSTGRES_USER=user \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=cleandb \
+  -v postgres_data:/var/lib/postgresql/data \
+  --health-cmd="pg_isready -U user -d cleandb" \
+  --health-interval=5s \
+  --health-timeout=5s \
+  --health-retries=5 \
+  ankane/pgvector:latest
+
+### start the application image
+docker run \
+ --name clean-cooking-app \
+ -p 8000:8000 \
+ -e DATABASE_URL='postgresql://user:password@host.docker.internal:5432/cleandb' \
+ -e NODE_ENV=production \
+ -e JWT_SECRET=your-secret-key-min-32-chars \
+ -e INCLUDE_EXTERNAL=true \
+ -e SEARCH_ENGINE=perplexity \
+ -e PERPLEXITY_API_KEY=<replace_with_api_key> \
+ --add-host=host.docker.internal:host-gateway \
+ <backend_image_from_previous_step>
+
 ```
 
 ### Database clean up
