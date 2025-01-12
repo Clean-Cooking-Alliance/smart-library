@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -64,14 +64,13 @@ export const SearchPage: React.FC = () => {
 
   const searchQuery = new URLSearchParams(location.search).get('query') || '';
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['search', searchQuery],
     queryFn: async () => {
       if (!searchQuery) return null;
-      console.log(`Making query for: ${searchQuery}`);
       if (!isFrameworkQuery) {
-        const response = await api.post<CombinedSearchResponse>(
-          '/api/v1/search/',
+        const response = await axios.post<CombinedSearchResponse>(
+          'http://localhost:8000/api/v1/search/',
           {
             query: searchQuery,
             limit: 10,
@@ -80,14 +79,14 @@ export const SearchPage: React.FC = () => {
         );
         return response.data;
       } else {
-        const response = await api.get<InternalSearchResult[]>(
-          '/api/v1/documents/'
+        const response = await axios.get<InternalSearchResult[]>(
+          'http://localhost:8000/api/v1/documents/'
         );
         return { internal_results: response.data, external_results: [] };
       }
     },
-    enabled: !!searchQuery,
-    refetchInterval: 30000,
+    enabled: Boolean(searchQuery.trim()), // Only enable when there's a non-empty search query
+    staleTime: 1000 * 60 * 5, // Cache results for 5 minutes
   });
 
   React.useEffect(() => {
@@ -105,18 +104,22 @@ export const SearchPage: React.FC = () => {
     }
   }, [data]);
 
-  React.useEffect(() => {
-    if (searchQuery) {
-      refetch();
-    }
-  }, [searchQuery, refetch]);
+  // Add a state to track if a search has been initiated
+  const [hasSearched, setHasSearched] = useState(false);
 
+  // Update the handleSearch function
   const handleSearch = (query: string) => {
-    navigate(`/?query=${query}`);
-    setSelectedTags([]);
-    setSelectedResourceTypes([]);
-    setIsFrameworkQuery(false);
+    if (query.trim()) {
+      navigate(`/?query=${encodeURIComponent(query)}`);
+      setSelectedTags([]);
+      setSelectedResourceTypes([]);
+      setIsFrameworkQuery(false);
+      setHasSearched(true); // Set this to true when a search is initiated
+    }
   };
+
+  // Pass this modified loading state to SearchBar
+  const isSearching = isLoading && hasSearched;
 
   const handleFrameworkClick = (frameworkName: string) => {
     navigate(`/?query=${frameworkName}`);
@@ -253,14 +256,14 @@ export const SearchPage: React.FC = () => {
       <div className="flex flex-col items-center text-center">
         <h1 className="text-2xl font-bold mb-6">Ask Me About Clean Cooking</h1>
         <div className="w-full max-w-md mb-6">
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+          <SearchBar onSearch={handleSearch} isLoading={isSearching} />
         </div>
         {error ? (
           <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
             Error: {error instanceof Error ? error.message : 'An error occurred'}
           </div>
         ) : null}
-        {isLoading && <div className="mt-4 text-gray-600">Searching...</div>}
+        {searchQuery && isLoading && <div className="mt-4 text-gray-600">Searching...</div>}
       </div>
 
       {!data && (
