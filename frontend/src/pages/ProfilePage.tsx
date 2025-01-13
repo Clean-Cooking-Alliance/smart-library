@@ -230,7 +230,7 @@ export const ProfilePage: React.FC = () => {
             source_url: row['Link'],
             year_published: parseInt(row['Year Published'], 10),
             tags: tags,
-            resource_type: null,
+            resource_type: row['Type of Resource'],
           };
         }
       };
