@@ -44,9 +44,32 @@ cd clean-cooking-library
 
 Create a `.env` file in the root directory:
 ```env
+# Database connection string
 DATABASE_URL=postgresql://user:password@db:5432/cleandb
+
+# API key for OpenAI
 OPENAI_API_KEY=your_openai_api_key
+
+# API key for Perplexity
 PERPLEXITY_API_KEY=your_perplexity_api_key
+
+# Include external content in search results
+INCLUDE_EXTERNAL=true
+
+# Default search engine to use (options: 'perplexity', 'google')
+SEARCH_ENGINE=perplexity
+
+# API key for Google Search Engine
+GOOGLE_SE_API_KEY=<replace_with_api_key>
+
+# Search engine ID for Google Custom Search
+SE_ID=<replace_with_se_id>
+
+# Enable or disable autosaving of documents
+AUTOSAVE_DOCS=false
+
+# Minimum relevance threshold for search results
+MIN_RELEVANCE=0.8
 ```
 
 3. Build and start the application
@@ -155,8 +178,9 @@ docker-compose exec backend bash
 docker-compose exec frontend sh
 
 # In Production version, both frontend and backend are combined into a single docker image. This can be run in the following ways:
-## Using Dcoker compose:
-docker-compose -f docker-compose.prod.yml down (use -v to remove the db volume if needed - not encourgaed as alembic should be incremental to support any db changes)
+## Using Docker compose:
+docker-compose -f docker-compose.prod.yml down 
+#(use -v to remove the db volume if needed - not encouraged as alembic should be incremental to support any db changes)
 docker-compose -f docker-compose.prod.yml build
 docker-compose -f docker-compose.prod.yml up
 
@@ -189,7 +213,6 @@ docker run \
  -e PERPLEXITY_API_KEY=<replace_with_api_key> \
  --add-host=host.docker.internal:host-gateway \
  <backend_image_from_previous_step>
-
 ```
 
 ### Database clean up
@@ -211,8 +234,11 @@ docker volume rm clean-cooking-library_postgres_data
   - Supports natural language queries
   - Optional filters for region and topic
 
-### Framework Exploration
-- `GET /api/v1/documents/framework/{framework}` - Get documents by framework
+### Users
+- `POST /api/v1/users/` - Create new user
+- `POST /api/v1/users/login` - Log in
+- `POST /api/v1/users/users` - Get all users
+
 
 ## Contributing
 
@@ -222,10 +248,10 @@ docker volume rm clean-cooking-library_postgres_data
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+<!-- ## License
 
 [Add your license here]
 
 ## Contact
 
-[Add your contact information]
+[Add your contact information] -->
