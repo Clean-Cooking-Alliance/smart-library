@@ -69,8 +69,8 @@ export const SearchPage: React.FC = () => {
     queryFn: async () => {
       if (!searchQuery) return null;
       if (!isFrameworkQuery) {
-        const response = await axios.post<CombinedSearchResponse>(
-          'http://localhost:8000/api/v1/search/',
+        const response = await api.post<CombinedSearchResponse>(
+          '/api/v1/search/',
           {
             query: searchQuery,
             limit: 10,
@@ -79,8 +79,8 @@ export const SearchPage: React.FC = () => {
         );
         return response.data;
       } else {
-        const response = await axios.get<InternalSearchResult[]>(
-          'http://localhost:8000/api/v1/documents/'
+        const response = await api.get<InternalSearchResult[]>(
+          '/api/v1/documents/'
         );
         return { internal_results: response.data, external_results: [] };
       }
