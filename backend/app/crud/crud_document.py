@@ -87,12 +87,23 @@ class CRUDDocument(CRUDBase[Document, DocumentCreate, DocumentUpdate]):
         logger.info(f"The obj_in for document create: {obj_in}")
         existing_doc = self.get_by_title(db, title=obj_in.title)
         if not existing_doc:
+            
+            logger.info(f"Creating new document: {obj_in}")
+            
+            # Check if resource_type is valid
+            if obj_in.resource_type not in ResourceType.__members__.values():
+                logger.info(f"Invalid resource type: {obj_in.resource_type}")
+                resource_type = None
+            else:
+                resource_type = obj_in.resource_type
+
+            
             db_obj = Document(
                 title=obj_in.title,
                 summary=obj_in.summary,
                 source_url=obj_in.source_url,
                 year_published=obj_in.year_published,
-                resource_type=obj_in.resource_type,  # Add resource_type
+                resource_type=resource_type,
             )
 
             # Handle tags

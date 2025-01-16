@@ -3,6 +3,30 @@ import * as XLSX from 'xlsx';
 import axios, { AxiosError } from 'axios';
 import Cookies from 'js-cookie';
 
+const resourceTypes = [
+  "Academic Article",
+  "News",
+  "Video",
+  "Podcast",
+  "Journey Map",
+  "Discussion Brief",
+  "Stories",
+  "Webinar",
+  "Case Study",
+  "Factsheet",
+  "Country Action Plan",
+  "Research Report",
+  "Tool/ Toolkit",
+  "Journal Article",
+  "Field Research",
+  "Market Assessments",
+  "Progress Report",
+  "Persona",
+  "Strategy Document",
+  "Policy Brief",
+  "Blog"
+];
+
 export const ProfilePage: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -11,10 +35,10 @@ export const ProfilePage: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL || '';
 
   const api = axios.create({
-      baseURL: API_URL,
-      headers: {
-          'Content-Type': 'application/json',
-      },
+    baseURL: API_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
 
   useEffect(() => {
@@ -38,8 +62,12 @@ export const ProfilePage: React.FC = () => {
         },
       });
 
-      if (response.data.access_token) {
-        Cookies.set('sessionToken', response.data.access_token, { expires: 1 });
+      if (response.data.session_id) {
+        Cookies.set('sessionToken', response.data.session_id, {
+          expires: 1,
+          secure: true,
+          sameSite: 'Strict',
+        });
         Cookies.set('username', username, { expires: 1 });
         setIsAuthenticated(true);
       } else {
@@ -102,7 +130,7 @@ export const ProfilePage: React.FC = () => {
     };
 
     console.log('Payload:', payload);
-    
+
     interface AxiosError {
       response?: {
         data: any;
@@ -121,11 +149,11 @@ export const ProfilePage: React.FC = () => {
         source_url: '',
         year_published: '',
         tags: '',
-        resource_type: 'Academic Article', // Reset to default value
+        resource_type: 'Academic Article',
       });
     } catch (error) {
       const axiosError = error as AxiosError;
-      console.error('Axios error:', 
+      console.error('Axios error:',
         axiosError.response ? axiosError.response.data : axiosError.message
       );
       setDocumentUploadStatus('Failed to add document. Please try again.');
@@ -181,47 +209,72 @@ export const ProfilePage: React.FC = () => {
       const createJson = (row: any) => {
         if (row) {
           const tags: any[] = [];
+          let resourceType = null;
 
           if (row['Region']) {
             const regions = row['Region'].split('\n');
             regions.forEach((region: string) => {
-              tags.push({ name: region.replace("- ", "").trim(), category: "region" });
+              const trimmedRegion = region.replace("- ", "").trim();
+              if (trimmedRegion) {
+                tags.push({ name: trimmedRegion, category: "region" });
+              }
             });
           }
-
+          
           if (row['Country'] && !row['Country'].toLowerCase().includes('not specific')) {
             const countries = row['Country'].split('\n');
             countries.forEach((country: string) => {
-              tags.push({ name: country.replace("- ", "").trim(), category: "country" });
+              const trimmedCountry = country.replace("- ", "").trim();
+              if (trimmedCountry) {
+                tags.push({ name: trimmedCountry, category: "country" });
+              }
             });
           }
-
+          
           if (row['Topic']) {
             const topics = row['Topic'].split('\n').map((topic: string) => topic.trim().replace("- ", ""));
             topics.forEach((topic: string) => {
-              tags.push({ name: topic, category: "topic" });
+              if (topic) {
+                tags.push({ name: topic, category: "topic" });
+              }
             });
           }
-
+          
           if (row['Technology']) {
             const technologies = row['Technology'].split('\n').map((technology: string) => technology.trim().replace("- ", ""));
             technologies.forEach((technology: string) => {
-              tags.push({ name: technology, category: "technology" });
+              if (technology) {
+                tags.push({ name: technology, category: "technology" });
+              }
             });
           }
-
+          
           if (row['Product lifecycle']) {
             const productLifecycles = row['Product lifecycle'].split('\n').map((lifecycle: string) => lifecycle.trim().replace("- ", ""));
             productLifecycles.forEach((lifecycle: string) => {
-              tags.push({ name: lifecycle, category: "product_lifecycle" });
+              if (lifecycle) {
+                tags.push({ name: lifecycle, category: "product_lifecycle" });
+              }
             });
           }
-
+          
           if (row['Customer Journey']) {
             const customerJourneys = row['Customer Journey'].split('\n').map((journey: string) => journey.trim().replace("- ", ""));
             customerJourneys.forEach((journey: string) => {
-              tags.push({ name: journey, category: "customer_journey" });
+              if (journey) {
+                tags.push({ name: journey, category: "customer_journey" });
+              }
             });
+          }
+
+          if (row['Type of Resource']) {
+            resourceType = row['Type of Resource'].split('\n')[0]
+              .trim()
+              .replace("- ", "")
+              .toLowerCase()
+              .split(' ')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
           }
 
           return {
@@ -230,7 +283,7 @@ export const ProfilePage: React.FC = () => {
             source_url: row['Link'],
             year_published: parseInt(row['Year Published'], 10),
             tags: tags,
-            resource_type: row['Type of Resource'],
+            resource_type: resourceTypes.includes(resourceType) ? resourceType : null
           };
         }
       };
@@ -244,14 +297,29 @@ export const ProfilePage: React.FC = () => {
       };
 
       try {
-        for (const payload of jsonPayloads) {
-          await api.post(url, payload, { headers });
+        const validPayloads = jsonPayloads.filter(payload => payload !== null);
+        let successCount = 0;
+        let errorCount = 0;
+      
+        for (const payload of validPayloads) {
+          try {
+            await api.post(url, payload, { headers });
+            successCount++;
+          } catch (error) {
+            errorCount++;
+            console.error('Error uploading document:', error.response?.data || error.message);
+            console.error('Problematic payload:', payload);
+          }
         }
-        setUploadStatusFile(`${file.name} imported successfully.`);
-        alert(`${file.name}" imported successfully.`);
+      
+        if (errorCount === 0) {
+          setUploadStatusFile(`${file.name}: All ${successCount} documents imported successfully.`);
+        } else {
+          setUploadStatusFile(`${file.name}: ${successCount} documents imported successfully, ${errorCount} failed. Check console for details.`);
+        }
       } catch (error) {
-        console.error(error);
-        setUploadStatusFile(`Failed to import file. Please try again.`);
+        console.error('Upload process error:', error);
+        setUploadStatusFile(`Failed to import file. Please check the console for details.`);
       } finally {
         setIsLoading(false);
       }

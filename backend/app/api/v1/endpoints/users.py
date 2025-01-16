@@ -1,3 +1,4 @@
+import secrets
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -9,6 +10,10 @@ from ....core import security
 from ....schemas.token import Token
 
 router = APIRouter()
+
+class LoginResponse(BaseModel):
+    session_id: str
+    token_type: str
 
 @router.post("/", response_model=User)
 def create_user(
@@ -31,7 +36,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=LoginResponse)
 def login(
     *,
     db: Session = Depends(get_db),
@@ -44,8 +49,8 @@ def login(
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     return {
-        "access_token": security.create_access_token(user.id),
-        "token_type": "bearer",
+        "session_id": secrets.token_urlsafe(),
+        "token_type": "Bearer",
     }
 
 @router.get("/users", response_model=List[User])
