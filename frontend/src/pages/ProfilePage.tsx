@@ -306,8 +306,9 @@ export const ProfilePage: React.FC = () => {
             await api.post(url, payload, { headers });
             successCount++;
           } catch (error) {
+            const axiosError = error as AxiosError;
             errorCount++;
-            console.error('Error uploading document:', error.response?.data || error.message);
+            console.error('Error uploading document:', axiosError.response?.data || axiosError.message);
             console.error('Problematic payload:', payload);
           }
         }

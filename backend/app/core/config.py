@@ -7,11 +7,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Clean Cooking Library"
     
     # database setup variables
-    DATABASE_URL: str
-    DATABASE_USER: str = "user"
-    DATABASE_PASSWORD: str = "password"
-    DATABASE_NAME: str = "cleandb"
-    
+    DB_HOST: str
+    DB_PORT: Optional[str] = "5432"
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_NAME: Optional[str] = "cleandb"
+
     # search engine setup variables
     INCLUDE_EXTERNAL: bool = False
     SEARCH_ENGINE: str = "perplexity"
@@ -27,6 +28,10 @@ class Settings(BaseSettings):
     JWT_SECRET: Optional[str] = None
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     CACHE_TIMEOUT: int = 60 * 60 * 24  # 24 hours cache
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     class Config:
         env_file = ".env"
