@@ -7,7 +7,7 @@ import csv
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
-from openai import OpenAI
+# from openai import OpenAI
 import aiohttp
 from cachetools import TTLCache
 import numpy as np
