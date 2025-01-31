@@ -1,0 +1,374 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: 'Clean Cooking Library Infrastructure'
+
+Globals:
+
+Parameters:
+  appId:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: smart-library
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.16.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.32.0/24
+
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.128.0/24
+
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.144.0/24
+  
+  stageName:
+    Type: String
+    Default: v1
+
+  apiBasePath:
+    Type: String
+    Default: ''
+
+  apiGatewayDomain:
+    Type: String
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+  
+  # Internet gateway for public connection
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+
+  # Attaching InternetGateway to VPC
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+    
+  # 2 public subnets 1 in each AZ  
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Public Subnet (AZ1)
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Public Subnet (AZ2)
+
+  # 2 Private subnets 1 in each AZ
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Private Subnet (AZ1)
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs  '' ]
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Private Subnet (AZ2)
+
+  # Public route table 
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Public Routes
+
+  # Default public route associated to the public route table
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Explicit subnet association of public subnets to default route table
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  # private Route table and the explicit subnet association of the private subnet
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Private Routes (AZ1)
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  # private Route table and the explicit subnet association of the private subnet
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${appId} Private Routes (AZ2)
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+        
+  # The private subnet group for RDS Instance
+  RDSSubnetGroup:
+    UpdateReplacePolicy: Retain
+    Type: AWS::RDS::DBSubnetGroup
+    DeletionPolicy: Retain
+    Properties:
+      DBSubnetGroupDescription: New VPC subnet Group for CCA rds instance
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      DBSubnetGroupName: !Sub ${appId}-rds-subnet
+
+  # Security group to allow inbound traffic to RDS on 5432 port
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      GroupDescription: Allow instances to RDS access
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - Description: Allow outbound to RDS
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          DestinationSecurityGroupId: !Ref RDSSecurityGroup
+        - Description: Allow outbound to internet
+          IpProtocol: -1
+          FromPort: -1 
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+  # Security group to allow inbound traffic to RDS on 5432 port
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      GroupDescription: Allow instances to RDS access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: Allow inbound to RDS
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+          
+  # RDS Instance
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      DBInstanceIdentifier: clean-cooking-db
+      DBName: cleandb
+      DbInstancePort: '5432'
+      ManageMasterUserPassword: true
+      MasterUsername: postgres
+      Engine: postgres
+      EngineVersion: '16.3'
+      DBInstanceClass: db.t3.small
+      StorageType: gp3
+      AllocatedStorage: '20'
+      MaxAllocatedStorage: 1000
+      StorageEncrypted: true
+      DeletionProtection: true
+      AssociatedRoles: []
+      CACertificateIdentifier: rds-ca-rsa2048-g1
+      MultiAZ: false
+      VPCSecurityGroups: 
+        - !Ref RDSSecurityGroup
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: The RestApi resource for the API
+      Name: !Sub "${appId}-api"
+
+  RestApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApi
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: "{proxy+}"
+
+  RestApiResourceMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      HttpMethod: ANY
+      ResourceId: !Ref RestApiResource
+      RestApiId:
+        Ref: RestApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SmartLibraryFunction.Arn}:live/invocations'
+
+  RestApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: RestApi
+    DependsOn:
+      - RestApiResource
+      - RestApiResourceMethod
+
+  RestApiDeploymentStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId:
+        Ref: RestApi
+      DeploymentId:
+        Ref: RestApiDeployment
+      MethodSettings:
+        - HttpMethod: "*"
+          ResourcePath: /*
+      StageName: !Ref stageName
+
+  RestApiDomainMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: !Sub apiBasePath
+      DomainName: !Ref apiGatewayDomain
+      RestApiId: !Ref RestApi
+      Stage: !Ref RestApiDeploymentStage
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${appId}-lambda-execution-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: [ lambda.amazonaws.com ]
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: root
+          PolicyDoument:
+            Statement:
+              - Effect: "Allow"
+  
+  SmartLibraryFunction:
+    Type: AWS::Serverless::Function
+    DependsOn: [RestApi]
+    Properties:
+      FunctionName: !Sub ${appIs}-api
+      CodeUri: ./backend
+      Handler: app.main.handler
+      Runtime: python3.11
+      Timeout: 30
+      MemorySize: 1024
+      Environment:
+        Variables:
+          DB_USER: postgres
+          DB_PASSWORD: !Sub '{{resolve:secretsmanager:${RDSInstance.MasterUserSecret.SecretArn}:SecretString:password}}'
+          DB_HOST: !GetAtt RDSInstance.Endpoint.Address
+          DB_PORT: !GetAtt RDSInstance.Endpoint.Port
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Ref PrivateSubnets
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+      Policies:
+        - VPCAccessPolicy: {}
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref DBSecretArn
+        - Statement:
+            - Effect: Allow
+              Action:
+                - rds-db:connect
+              Resource: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${RDSInstance}
+            - Effect: Allow
+              Action: 
+                - secretsmanager:GetSecretValue
+              Resource: !GetAtt RDSInstance.MasterUserSecret.SecretArn
+
+
+        
+
