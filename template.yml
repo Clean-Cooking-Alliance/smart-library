@@ -199,7 +199,7 @@ Resources:
       DBSubnetGroupName: !Sub ${appId}-rds-subnet
 
   # Security group to allow inbound traffic to RDS on 5432 port
-  LambdaSecurityGroup:
+  ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
@@ -259,115 +259,7 @@ Resources:
         - !Ref RDSSecurityGroup
       DBSubnetGroupName: !Ref RDSSubnetGroup
 
-  RestApi:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Description: The RestApi resource for the API
-      Name: !Sub "${appId}-api"
 
-  RestApiResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref RestApi
-      ParentId: !GetAtt RestApi.RootResourceId
-      PathPart: "{proxy+}"
-
-  RestApiResourceMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      HttpMethod: ANY
-      ResourceId: !Ref RestApiResource
-      RestApiId:
-        Ref: RestApi
-      Integration:
-        IntegrationHttpMethod: POST
-        Type: AWS_PROXY
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SmartLibraryFunction.Arn}:live/invocations'
-
-  RestApiDeployment:
-    Type: AWS::ApiGateway::Deployment
-    Properties:
-      RestApiId:
-        Ref: RestApi
-    DependsOn:
-      - RestApiResource
-      - RestApiResourceMethod
-
-  RestApiDeploymentStage:
-    Type: AWS::ApiGateway::Stage
-    Properties:
-      RestApiId:
-        Ref: RestApi
-      DeploymentId:
-        Ref: RestApiDeployment
-      MethodSettings:
-        - HttpMethod: "*"
-          ResourcePath: /*
-      StageName: !Ref stageName
-
-  RestApiDomainMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Properties:
-      BasePath: !Sub apiBasePath
-      DomainName: !Ref apiGatewayDomain
-      RestApiId: !Ref RestApi
-      Stage: !Ref RestApiDeploymentStage
-
-  LambdaExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub "${appId}-lambda-execution-role"
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service: [ lambda.amazonaws.com ]
-            Action: "sts:AssumeRole"
-      Policies:
-        - PolicyName: root
-          PolicyDoument:
-            Statement:
-              - Effect: "Allow"
-  
-  SmartLibraryFunction:
-    Type: AWS::Serverless::Function
-    DependsOn: [RestApi]
-    Properties:
-      FunctionName: !Sub ${appIs}-api
-      CodeUri: ./backend
-      Handler: app.main.handler
-      Runtime: python3.11
-      Timeout: 30
-      MemorySize: 1024
-      Environment:
-        Variables:
-          DB_USER: postgres
-          DB_PASSWORD: !Sub '{{resolve:secretsmanager:${RDSInstance.MasterUserSecret.SecretArn}:SecretString:password}}'
-          DB_HOST: !GetAtt RDSInstance.Endpoint.Address
-          DB_PORT: !GetAtt RDSInstance.Endpoint.Port
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref PrivateSubnets
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /{proxy+}
-            Method: ANY
-      Policies:
-        - VPCAccessPolicy: {}
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Ref DBSecretArn
-        - Statement:
-            - Effect: Allow
-              Action:
-                - rds-db:connect
-              Resource: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${RDSInstance}
-            - Effect: Allow
-              Action: 
-                - secretsmanager:GetSecretValue
-              Resource: !GetAtt RDSInstance.MasterUserSecret.SecretArn
 
 
         
