@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     SE_ID: Optional[str] = None    
     
     # autosaving docs setup variables
-    AUTOSAVE_DOCS: bool = False
+    VITE_AUTOSAVE_DOCS: bool = False
     MIN_RELEVANCE: Optional[float] = 0.5
     
     JWT_SECRET: Optional[str] = None

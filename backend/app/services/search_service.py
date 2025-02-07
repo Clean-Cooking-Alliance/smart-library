@@ -207,7 +207,7 @@ class SearchService:
                         processed_results = []
                         
                         for result in results[:limit]:
-                            autosaving = hasattr(settings, 'AUTOSAVE_DOCS') and settings.AUTOSAVE_DOCS and hasattr(settings, 'MIN_RELEVANCE') and self._calculate_relevance_score(result['url']) >= settings.MIN_RELEVANCE
+                            autosaving = hasattr(settings, 'VITE_AUTOSAVE_DOCS') and settings.VITE_AUTOSAVE_DOCS and hasattr(settings, 'MIN_RELEVANCE') and self._calculate_relevance_score(result['url']) >= settings.MIN_RELEVANCE
                             summary_vec = self._get_embedding(result['summary'])
                             tags = []
                             for tag in db.query(TagModel).all():

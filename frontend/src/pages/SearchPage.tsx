@@ -39,6 +39,9 @@ interface CombinedSearchResponse {
 }
 
 export const SearchPage: React.FC = () => {
+	const isAutosaveEnabled = import.meta.env.VITE_AUTOSAVE_DOCS
+		? import.meta.env.VITE_AUTOSAVE_DOCS.trim().toLowerCase() === 'true'
+		: false;
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [selectedTags, setSelectedTags] = React.useState<number[]>([]);
@@ -199,14 +202,14 @@ export const SearchPage: React.FC = () => {
 						<div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
 							<div className="flex justify-between">
 								<h3 className="text-lg font-semibold mb-2">{result.title}</h3>
-								{isAuthenticated && result.source === 'external' && (import.meta.env.AUTOSAVE_DOCS ? import.meta.env.AUTOSAVE_DOCS.trim().lower() === 'false' : 'false') ? (
+								{isAuthenticated && result.source === 'external' && !isAutosaveEnabled && (
 									<button
 										className="bg-[#568d43] text-white text-xs px-2 py-2 rounded shadow"
 										onClick={() => saveExternalDocument(result as ExternalSearchResult)}
 									>
 										Save to Internal Database
 									</button>
-								) : null}
+								)}
 							</div>
 							{result.resource_type &&
 								(
@@ -300,8 +303,8 @@ export const SearchPage: React.FC = () => {
 			{data && (
 				<div className="flex flex-wrap mt-8">
 					<div className="w-full md:w-1/4 mb-4 md:mb-0 pr-4">
-						{(isFrameworkQuery ? filterResultsByFramework(data.internal_results, searchQuery).length > 0 
-						  : (data.internal_results.length > 0 || data.external_results.length > 0)) ? (
+						{(isFrameworkQuery ? filterResultsByFramework(data.internal_results, searchQuery).length > 0
+							: (data.internal_results.length > 0 || data.external_results.length > 0)) ? (
 							<TagFilter
 								tags={Array.from(new Set(data.internal_results.flatMap((result) => result.tags.map((tag) => tag.id))))
 									.map((id) =>
