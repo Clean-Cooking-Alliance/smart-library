@@ -66,7 +66,7 @@ GOOGLE_SE_API_KEY=<replace_with_api_key>
 SE_ID=<replace_with_se_id>
 
 # Enable or disable autosaving of documents
-AUTOSAVE_DOCS=false
+VITE_AUTOSAVE_DOCS=false
 
 # Minimum relevance threshold for search results
 MIN_RELEVANCE=0.8
