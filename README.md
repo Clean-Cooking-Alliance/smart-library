@@ -53,6 +53,9 @@ OPENAI_API_KEY=your_openai_api_key
 # API key for Perplexity
 PERPLEXITY_API_KEY=your_perplexity_api_key
 
+# Model for Perplexity
+PERPLEXITY_MODEL=sonar
+
 # Include external content in search results
 INCLUDE_EXTERNAL=true
 

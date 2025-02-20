@@ -168,7 +168,7 @@ class SearchService:
                 )
 
                 payload = {
-                    "model": "llama-3.1-sonar-large-128k-online",
+                    "model": settings.PERPLEXITY_MODEL,
                     "messages": [
                         {
                             "role": "system",
